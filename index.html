@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MOINdocs">
+<meta name="theme-color" content="#145a32">
+<title>MOINdocs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+/* ══ TOKENS ══ */
+:root{
+  --bg:#f4f7f5;--bg2:#eaf2ec;--surf:#ffffff;--surf2:#f8fbf9;
+  --bdr:#d4e8da;--bdr2:#b6d9c0;
+  --g50:#f0faf4;--g100:#d8f0e1;--g200:#a8d9b8;--g300:#6cbd87;
+  --g400:#3da864;--g500:#278a4a;--g600:#1a7038;--g700:#125529;--g800:#0b3819;
+  --txt:#111f17;--txt2:#2d5c3f;--muted:#6b9c7a;
+  --red:#e02020;--amber:#c97a00;--blue:#1d5fc8;--purple:#6b27cc;
+  --hh:56px;--nav:62px;--rad:14px;
+  --sh:0 1px 6px rgba(18,85,41,.08);
+  --sh-md:0 4px 18px rgba(18,85,41,.11);
+  --sh-lg:0 8px 32px rgba(18,85,41,.16);
+  --glass:rgba(255,255,255,.72);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:15px;height:100%;overflow:hidden;position:relative;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--g200);border-radius:99px;}
+
+/* ══ HEADER ══ */
+.hdr{position:fixed;top:0;left:0;right:0;height:var(--hh);z-index:300;
+  background:linear-gradient(135deg,var(--g800) 0%,var(--g600) 100%);
+  display:flex;align-items:center;padding:0 14px;gap:8px;
+  box-shadow:0 2px 20px rgba(0,0,0,.25);}
+.hdr-menu{background:none;border:none;color:rgba(255,255,255,.75);cursor:pointer;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:1.15rem;border-radius:10px;flex-shrink:0;transition:background .15s;}
+.hdr-menu:active{background:rgba(255,255,255,.15);}
+.hdr-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;color:#fff;
+  letter-spacing:.02em;white-space:nowrap;display:flex;align-items:center;gap:9px;flex:1;min-width:0;}
+.hdr-logo .lico{width:30px;height:30px;background:rgba(255,255,255,.18);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:.88rem;flex-shrink:0;
+  border:1.5px solid rgba(255,255,255,.25);}
+.hdr-logo em{color:var(--g300);font-style:normal;}
+.hdr-sub{font-size:.6rem;font-weight:600;color:rgba(255,255,255,.5);
+  font-family:'Plus Jakarta Sans',sans-serif;display:block;line-height:1;margin-top:2px;
+  max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hdr-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.hdr-sync{width:32px;height:32px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);
+  border-radius:9px;color:rgba(255,255,255,.8);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:background .15s;}
+.hdr-sync:active{background:rgba(255,255,255,.2);}
+.hdr-sync.spin{animation:rotateit .7s linear infinite;}
+.hdr-new{background:var(--g400);border:none;color:#fff;border-radius:9px;
+  padding:7px 13px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;
+  font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:background .15s;}
+.hdr-new:active{background:var(--g500);}
+@keyframes rotateit{to{transform:rotate(360deg);}}
+
+/* ══ BOTTOM NAV ══ */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);
+  background:linear-gradient(135deg,var(--g800) 0%,var(--g600) 100%);
+  z-index:300;box-shadow:0 -2px 20px rgba(0,0,0,.2);display:flex;
+  padding-bottom:env(safe-area-inset-bottom,0);}
+.bnb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;background:none;border:none;color:rgba(255,255,255,.38);cursor:pointer;
+  font-size:.5rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:6px 2px;transition:color .2s,background .2s;position:relative;border-radius:0;}
+.bnb .ico{font-size:1.25rem;line-height:1;transition:transform .2s;}
+.bnb.active{color:#fff;}
+.bnb.active .ico{transform:translateY(-1px);}
+.bnb.active::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;background:var(--g300);border-radius:50%;}
+
+/* ══ LAYOUT ══ */
+.layout{display:flex;height:100vh;padding-top:var(--hh);padding-bottom:var(--nav);}
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:275px;min-width:275px;background:var(--surf);
+  border-right:1px solid var(--bdr);padding:16px 12px;
+  display:flex;flex-direction:column;height:100%;}
+.sec-ttl{font-family:'Syne',sans-serif;font-size:.57rem;font-weight:800;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:9px;padding-bottom:7px;
+  border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+
+/* ══ MAIN ══ */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 12px 32px;height:100%;min-width:0;}
+
+/* ══ CARDS ══ */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);
+  padding:16px;margin-bottom:12px;box-shadow:var(--sh);}
+.card-ttl{font-family:'Syne',sans-serif;font-size:.66rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--g600);margin-bottom:14px;padding-bottom:10px;
+  border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;}
+.card-ttl .ti{width:28px;height:28px;background:linear-gradient(135deg,var(--g100),var(--g50));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;flex-shrink:0;border:1px solid var(--bdr);}
+
+/* ══ FORM ══ */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+.fg:last-child{margin-bottom:0;}
+label{font-size:.6rem;color:var(--txt2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;}
+input,select,textarea{
+  background:var(--surf2);border:1.5px solid var(--bdr);border-radius:10px;
+  color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;font-weight:600;
+  padding:10px 13px;width:100%;transition:border-color .15s,box-shadow .15s,background .15s;
+  -webkit-appearance:none;appearance:none;min-width:0;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g500);
+  box-shadow:0 0 0 3px rgba(39,138,74,.13);background:var(--surf);}
+input[readonly]{color:var(--muted);cursor:default;background:var(--bg2);border-color:var(--bdr);}
+input[type=date]{color-scheme:light;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* ══ AUTOCOMPLETE ══ */
+.ac-wrap{position:relative;}
+.ac-drop{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:500;
+  background:var(--surf);border:1.5px solid var(--g400);border-radius:12px;
+  max-height:220px;overflow-y:auto;display:none;box-shadow:var(--sh-lg);}
+.ac-drop.open{display:block;}
+.ac-item{padding:10px 14px;font-size:.83rem;font-weight:600;cursor:pointer;
+  border-bottom:1px solid var(--bdr);transition:background .1s;}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item:active{background:var(--g50);color:var(--g700);}
+.ac-sub{font-size:.64rem;color:var(--muted);margin-top:2px;}
+.ac-used{pointer-events:none;opacity:.6;}
+.ac-used-tag{font-size:.58rem;color:var(--red);font-weight:700;margin-left:5px;
+  background:rgba(224,32,32,.1);padding:1px 5px;border-radius:4px;}
+
+/* ══ BUTTONS ══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:10px 17px;border-radius:10px;border:1.5px solid transparent;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--g500),var(--g600));color:#fff;border-color:transparent;
+  box-shadow:0 2px 10px rgba(39,138,74,.3);}
+.btn-primary:active{opacity:.9;transform:scale(.98);}
+.btn-outline{background:transparent;color:var(--g600);border-color:var(--g300);}
+.btn-outline:active{background:var(--g50);}
+.btn-ghost{background:transparent;color:var(--txt2);border-color:var(--bdr);}
+.btn-ghost:active{background:var(--bg2);}
+.btn-danger{background:#fee2e2;color:var(--red);border-color:#fca5a5;}
+.btn-danger:active{background:#fecaca;}
+.btn-sm{padding:7px 12px;font-size:.74rem;border-radius:8px;}
+.btn-xs{padding:4px 8px;font-size:.68rem;border-radius:6px;}
+.btn-full{width:100%;}
+
+/* ══ CUSTOMER LIST ══ */
+.ci{background:var(--surf2);border:1px solid var(--bdr);border-radius:11px;
+  padding:10px 12px;cursor:pointer;transition:all .15s;display:flex;
+  align-items:center;justify-content:space-between;margin-bottom:5px;}
+.ci:active,.ci.active{border-color:var(--g400);background:var(--g50);
+  box-shadow:0 2px 10px rgba(39,138,74,.1);}
+.ci-name{font-weight:700;font-size:.82rem;color:var(--txt);}
+.ci-meta{color:var(--muted);font-size:.65rem;margin-top:2px;}
+.ci-del{background:none;border:none;color:var(--muted);cursor:pointer;
+  padding:5px 7px;font-size:.75rem;border-radius:7px;flex-shrink:0;transition:all .15s;}
+.ci-del:active{color:var(--red);background:#fee2e2;}
+
+/* ══ TABS ══ */
+.tab-bar{display:flex;gap:3px;margin-bottom:14px;background:var(--surf);
+  border:1px solid var(--bdr);border-radius:13px;padding:4px;box-shadow:var(--sh);}
+.tab-btn{flex:1;padding:8px 4px;border-radius:10px;border:none;background:transparent;
+  color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:.67rem;font-weight:700;
+  cursor:pointer;transition:all .18s;text-align:center;line-height:1.25;}
+.tab-btn.active{background:linear-gradient(135deg,var(--g600),var(--g700));color:#fff;
+  box-shadow:0 2px 10px rgba(18,85,41,.3);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+@media(max-width:699px){.tab-bar{display:none;}}
+
+/* ══ GEN BUTTONS ══ */
+.gen-btn{padding:13px 8px;border-radius:12px;border:1.5px solid;background:transparent;
+  font-family:'Syne',sans-serif;font-size:.72rem;font-weight:800;letter-spacing:.03em;
+  cursor:pointer;transition:all .18s;text-align:center;text-transform:uppercase;
+  width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.gen-btn:active{transform:scale(.96);}
+.gen-btn.quot{border-color:var(--amber);color:var(--amber);background:#fffbeb;}
+.gen-btn.recv{border-color:var(--g500);color:var(--g600);background:var(--g50);}
+.gen-btn.invc{border-color:var(--blue);color:var(--blue);background:#eff6ff;}
+.gen-btn small{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-size:.57rem;
+  color:var(--muted);text-transform:none;letter-spacing:0;font-weight:600;margin-top:2px;}
+.gen-btn-all{padding:15px;border-radius:13px;border:2px dashed var(--g300);background:var(--g50);
+  font-family:'Syne',sans-serif;font-size:.74rem;font-weight:800;letter-spacing:.03em;
+  cursor:pointer;transition:all .18s;text-align:center;text-transform:uppercase;width:100%;
+  display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--g700);}
+.gen-btn-all:active{transform:scale(.97);background:var(--g100);}
+.gen-btn-all small{font-family:'Plus Jakarta Sans',sans-serif;font-size:.59rem;
+  color:var(--muted);text-transform:none;font-weight:600;}
+
+/* ══ CALC ROWS ══ */
+.cr{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--bdr);font-size:.83rem;font-weight:600;}
+.cr:last-child{border-bottom:none;font-weight:800;color:var(--g700);font-size:.88rem;}
+.cr-lbl{color:var(--txt2);}
+
+/* ══ BADGES ══ */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;
+  font-size:.55rem;font-weight:700;letter-spacing:.04em;}
+.b-auto{background:rgba(29,95,200,.1);color:var(--blue);border:1px solid rgba(29,95,200,.2);}
+.b-cnt{background:var(--g100);color:var(--g600);border:1px solid var(--g200);}
+.b-purple{background:rgba(107,39,204,.1);color:var(--purple);border:1px solid rgba(107,39,204,.2);}
+.b-green{background:var(--g100);color:var(--g700);border:1px solid var(--g200);}
+
+/* ══ DOC STATUS ══ */
+.dns{font-size:.67rem;margin-top:5px;padding:6px 11px;border-radius:8px;font-weight:700;}
+.dns.warn{background:#fee2e2;color:var(--red);}
+.dns.ok{background:var(--g100);color:var(--g700);}
+
+/* ══ PCT TAG ══ */
+.pct-tag{display:inline-block;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:6px;margin-top:3px;}
+.pct-ok{background:var(--g100);color:var(--g700);}
+.pct-err{background:#fee2e2;color:var(--red);}
+
+/* ══ SUGGESTION CARDS ══ */
+.sug-box{background:linear-gradient(135deg,var(--g50),#fff);border:1.5px solid var(--g200);
+  border-radius:12px;padding:13px 14px;margin-top:10px;}
+.sug-box-title{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);margin-bottom:9px;}
+.sug-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:.8rem;}
+.sug-lbl{color:var(--txt2);font-weight:600;}
+.sug-val{font-weight:800;font-variant-numeric:tabular-nums;}
+.sug-total{color:var(--g700);font-weight:800;border-top:1px solid var(--bdr);
+  padding-top:7px;margin-top:5px;font-size:.85rem;}
+.sug-apply{background:linear-gradient(135deg,var(--g500),var(--g600));color:#fff;
+  border:none;border-radius:9px;padding:8px 15px;font-size:.74rem;font-weight:700;
+  cursor:pointer;margin-top:10px;font-family:'Plus Jakarta Sans',sans-serif;
+  box-shadow:0 2px 8px rgba(39,138,74,.25);}
+.sug-apply:active{opacity:.9;}
+
+/* ══ DIVIDER / TIP ══ */
+.divider{height:1px;background:var(--bdr);margin:14px 0;}
+.tip{font-size:.66rem;color:var(--muted);font-style:italic;line-height:1.6;margin-top:4px;}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:calc(var(--nav) + 14px);left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--g800);color:#fff;padding:11px 22px;border-radius:12px;
+  font-size:.8rem;font-weight:700;z-index:9999;pointer-events:none;
+  opacity:0;transition:all .22s;white-space:nowrap;max-width:92vw;text-align:center;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{background:var(--red);}
+.toast.warn{background:var(--amber);}
+
+/* ══ MODAL ══ */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:600;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.modal-ov.open{display:flex;}
+.modal{background:var(--surf);border:1px solid var(--bdr);border-radius:20px 20px 0 0;
+  padding:20px 18px calc(env(safe-area-inset-bottom,0px)+24px);width:100%;
+  max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 48px rgba(0,0,0,.22);}
+.modal h2{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;
+  margin-bottom:16px;color:var(--g700);}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;
+  margin-top:16px;padding-top:12px;border-top:1px solid var(--bdr);}
+.pill{width:38px;height:4px;background:var(--bdr2);border-radius:99px;margin:0 auto 16px;}
+
+/* ══ SIDEBAR OVERLAY ══ */
+.sb-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;}
+.sb-ov.open{display:block;}
+
+/* ══ SPINNER ══ */
+.spin-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:800;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(5px);}
+.spin-ov.open{display:flex;}
+.spinner{width:46px;height:46px;border:4px solid rgba(255,255,255,.18);
+  border-top-color:var(--g300);border-radius:50%;animation:rotateit .65s linear infinite;}
+.spin-msg{font-size:.86rem;font-weight:700;color:rgba(255,255,255,.88);}
+
+/* ══ AUTH SCREEN ══ */
+.auth-screen{position:fixed;inset:0;background:linear-gradient(160deg,var(--g800) 0%,var(--g600) 60%,var(--g500) 100%);
+  z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px;}
+.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2.4rem;color:#fff;letter-spacing:.04em;}
+.auth-logo em{color:var(--g300);font-style:normal;}
+.auth-card{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);
+  border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:16px;
+  max-width:300px;width:100%;}
+.auth-sub{font-size:.82rem;color:rgba(255,255,255,.7);text-align:center;line-height:1.65;}
+.auth-btn{background:#fff;color:#222;border:none;border-radius:12px;padding:13px 24px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);
+  transition:transform .15s,box-shadow .15s;width:100%;justify-content:center;}
+.auth-btn:active{transform:scale(.97);}
+.auth-btn svg{width:20px;height:20px;flex-shrink:0;}
+.auth-user{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;
+  border-radius:10px;border:1px solid rgba(255,255,255,.2);transition:background .15s;}
+.auth-user:active{background:rgba(255,255,255,.1);}
+.auth-avatar{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.35);flex-shrink:0;}
+.auth-name{font-size:.67rem;font-weight:700;color:rgba(255,255,255,.88);max-width:70px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ══ FIREBASE BAR ══ */
+.fb-bar{background:var(--g100);border-bottom:1px solid var(--bdr);padding:6px 16px;
+  font-size:.67rem;font-weight:700;color:var(--g700);display:flex;align-items:center;gap:7px;}
+.fb-bar.err{background:#fee2e2;color:var(--red);}
+.fb-bar.warn{background:#fef3c7;color:var(--amber);}
+
+/* ══ PDF ══ */
+#pdf-ct{position:absolute;left:-9999px;top:0;width:210mm;}
+
+/* ══ DESKTOP ══ */
+@media(min-width:700px){
+  body{overflow:hidden;}
+  .hdr-menu{display:none !important;}
+  .bot-nav{display:none !important;}
+  .layout{padding-bottom:0;}
+  .sidebar{display:flex !important;width:290px;min-width:290px;}
+  .sb-ov{display:none !important;}
+  .main{padding:18px 26px 24px;}
+  .main-inner{max-width:700px;margin:0 auto;}
+  .toast{bottom:22px;}
+  .modal-ov{align-items:center;}
+  .modal{border-radius:18px;max-width:500px;}
+  .hdr{padding:0 24px;height:60px;}
+  :root{--hh:60px;}
+  .card{border-radius:16px;}
+  .tab-bar{border-radius:14px;}
+  .tab-btn{font-size:.74rem;padding:9px 8px;}
+  .row3{grid-template-columns:1fr 1fr 1fr !important;}
+}
+
+@media(min-width:1100px){
+  .sidebar{width:310px;min-width:310px;}
+  .main{padding:22px 40px;}
+  .main-inner{max-width:780px;}
+}
+
+/* ══ SIGNATURE PAD ══ */
+.sig-wrap{border:2px dashed var(--bdr2);border-radius:12px;background:var(--surf2);
+  overflow:hidden;position:relative;touch-action:none;}
+.sig-wrap canvas{display:block;width:100%;cursor:crosshair;}
+.sig-actions{display:flex;gap:7px;margin-top:7px;}
+.sig-clear{background:none;border:1.5px solid var(--bdr2);border-radius:8px;
+  padding:6px 13px;font-size:.72rem;font-weight:700;color:var(--muted);cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;}
+.sig-clear:active{background:var(--bg2);}
+.sig-preview{max-width:120px;border:1px solid var(--bdr);border-radius:8px;margin-top:5px;}
+
+/* ══ FULLSCREEN SIGNATURE ══ */
+.sig-fs-ov{display:none;position:fixed;inset:0;background:#fff;z-index:1000;
+  flex-direction:column;}
+.sig-fs-ov.open{display:flex;}
+.sig-fs-hdr{background:var(--g800);color:#fff;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sig-fs-hdr h3{font-family:"Syne",sans-serif;font-size:.95rem;font-weight:800;}
+.sig-fs-body{flex:1;display:flex;flex-direction:column;padding:0;overflow:hidden;}
+.sig-fs-canvas{flex:1;display:block;width:100%;cursor:crosshair;touch-action:none;
+  border-bottom:2px dashed var(--bdr2);}
+.sig-fs-foot{padding:12px 16px;display:flex;gap:10px;background:var(--surf);flex-shrink:0;}
+
+/* ══ OSV / DOCS CARDS ══ */
+.doc-section{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);
+  padding:16px;margin-bottom:12px;box-shadow:var(--sh);}
+.doc-section-ttl{font-family:'Syne',sans-serif;font-size:.66rem;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--g600);margin-bottom:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;}
+.upload-zone{border:2px dashed var(--bdr2);border-radius:12px;padding:20px;
+  text-align:center;cursor:pointer;transition:all .15s;background:var(--surf2);}
+.upload-zone:active,.upload-zone.drag{border-color:var(--g400);background:var(--g50);}
+.upload-zone input[type=file]{display:none;}
+.upload-zone .uz-ico{font-size:1.8rem;margin-bottom:6px;}
+.upload-zone .uz-txt{font-size:.78rem;font-weight:600;color:var(--txt2);}
+.upload-zone .uz-sub{font-size:.65rem;color:var(--muted);margin-top:3px;}
+.doc-preview{width:100%;border-radius:10px;border:1px solid var(--bdr);
+  max-height:340px;object-fit:contain;background:#fff;margin-top:8px;}
+.officer-badge{display:flex;align-items:center;gap:10px;background:var(--g50);
+  border:1px solid var(--g200);border-radius:10px;padding:10px 13px;}
+.officer-badge .ob-name{font-weight:800;font-size:.85rem;color:var(--g700);}
+.officer-badge .ob-sub{font-size:.65rem;color:var(--muted);margin-top:1px;}
+
+/* ══ MOBILE ══ */
+@media(max-width:699px){
+  .hdr-menu{display:flex;}
+  .layout{padding-bottom:var(--nav);}
+  .sidebar{display:none;position:fixed;top:var(--hh);left:0;bottom:var(--nav);
+    width:82vw;max-width:285px;z-index:260;box-shadow:4px 0 24px rgba(0,0,0,.15);}
+  .sidebar.open{display:flex;}
+  .main{padding:12px 10px;padding-bottom:calc(var(--nav) + 20px);}
+  .row3{grid-template-columns:1fr 1fr;}
+  .row3 .span-full{grid-column:1/-1;}
+}
+</style>
+<script src="tc_pdf.js"></script>
+<script src="rp_pdf.js"></script>
+</head>
+<body>
+<div id="app">
+
+<!-- ── AUTH SCREEN ── -->
+<div v-if="!authUser && authChecked" class="auth-screen">
+  <div class="auth-logo">MOIN<em>docs</em></div>
+  <div class="auth-card">
+    <div class="auth-sub">Sign in to access your documents. Organisation data is shared; your customers &amp; vehicles are private.</div>
+    <button class="auth-btn" @click="signInGoogle">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+      Continue with Google
+    </button>
+    <div v-if="authError" style="color:#fca5a5;font-size:.78rem;text-align:center;">{{ authError }}</div>
+  </div>
+</div>
+
+<div v-if="authChecked && !authUser" style="display:none;"></div>
+<template v-if="authUser">
+
+<!-- ── HEADER ── -->
+<header class="hdr">
+  <button class="hdr-menu" @click="sideOpen=!sideOpen" aria-label="Menu">☰</button>
+  <div class="hdr-logo">
+    <span class="lico">M</span>
+    <div>
+      <span>MOIN<em>docs</em></span>
+      <span class="hdr-sub">{{ currentOrg ? currentOrg.name : 'No org selected' }}</span>
+    </div>
+  </div>
+  <div class="hdr-actions">
+    <button class="hdr-sync" :class="{spin:fbSyncing}" @click="manualSync" title="Sync">☁</button>
+    <button class="hdr-new" @click="newCustomer">+ New</button>
+    <div class="auth-user" @click="signOut" title="Sign out">
+      <img v-if="authUser.photoURL" :src="authUser.photoURL" class="auth-avatar" :alt="authUser.displayName">
+      <span v-else class="auth-avatar" style="background:var(--g500);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff;font-weight:700;">{{ (authUser.displayName||'U')[0] }}</span>
+      <span class="auth-name">{{ (authUser.displayName||'').split(' ')[0] }}</span>
+    </div>
+  </div>
+</header>
+
+<!-- FB STATUS -->
+<div v-if="fbMsg" class="fb-bar" :class="fbMsgCls">{{ fbMsg }}</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sb-ov" :class="{open:sideOpen}" @click="sideOpen=false"></div>
+
+<!-- LAYOUT -->
+<div class="layout" :style="fbMsg?'padding-top:calc(var(--hh)+27px)':''">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" :class="{open:sideOpen}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div class="sec-ttl">Customers <span class="badge b-cnt">{{ customers.length }}/50</span></div>
+      <div style="overflow-y:auto;max-height:80vh;flex:1;padding-right:2px;">
+        <div v-for="c in customers" :key="c.id" class="ci" :class="{active:curCustId===c.id}"
+          @click="loadCustomer(c.id);sideOpen=false">
+          <div>
+            <div class="ci-name">{{ c.name||'Unnamed' }}</div>
+            <div class="ci-meta">{{ c.model||'—' }} · #{{ c.invno||'—' }}</div>
+          </div>
+          <button class="ci-del" @click.stop="confirmDeleteCust(c.id)">✕</button>
+        </div>
+        <div v-if="!customers.length" style="text-align:center;padding:16px 0;font-size:.76rem;color:var(--muted);">No customers yet</div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;flex-shrink:0;" @click="newCustomer();sideOpen=false">+ New Customer</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+    <div class="main-inner">
+
+    <!-- Desktop tab bar -->
+    <div class="tab-bar">
+      <button v-for="t in tabs" :key="t.id" class="tab-btn" :class="{active:tab===t.id}" @click="tab=t.id">
+        {{ t.icon }} {{ t.label }}
+      </button>
+    </div>
+
+    <!-- ═══ CUSTOMER TAB ═══ -->
+    <div class="tab-pane" :class="{active:tab==='customer'}">
+      <div class="card">
+        <div class="card-ttl"><span class="ti">👤</span> Customer Details</div>
+
+        <!-- Organisation selector -->
+        <div class="fg">
+          <label>Organisation</label>
+          <div style="display:flex;gap:6px;align-items:stretch;">
+            <select v-model="f.orgId" @change="onOrgChange" style="flex:1;min-width:0;">
+              <option value="">— Select Org —</option>
+              <option v-for="o in orgs" :key="o.id" :value="o.id">{{ o.name }}</option>
+            </select>
+            <button class="btn btn-outline btn-sm" style="flex-shrink:0;" @click="openOrgModal()">+ Add</button>
+            <button v-if="f.orgId" class="btn btn-ghost btn-sm" style="flex-shrink:0;" @click="editOrg">✏</button>
+            <button v-if="f.orgId" class="btn btn-danger btn-sm" style="flex-shrink:0;" @click="deleteOrg">✕</button>
+          </div>
+        </div>
+
+        <div class="fg"><label>Full Name</label>
+          <input v-model="f.name" type="text" placeholder="KRISHNA SHYAMLAL GUPTA" @input="touchDate"></div>
+        <div class="fg"><label>Address</label>
+          <input v-model="f.address" type="text" placeholder="Nityanand nagar lbs road mumbai 400086" @input="touchDate"></div>
+        <div class="row2">
+          <div class="fg"><label>Date</label><input v-model="f.date" type="date"></div>
+          <div class="fg">
+            <label>Doc / Invoice No.</label>
+            <div class="ac-wrap">
+              <input v-model="f.invno" type="text" placeholder="4004" @input="acDocno=dnoSug.length>0"
+                @blur="setTimeout(()=>acDocno=false,250)" autocomplete="off" inputmode="numeric">
+              <div class="ac-drop" :class="{open:acDocno}">
+                <div v-for="u in dnoSug" :key="u.no" class="ac-item ac-used">
+                  <strong>#{{ u.no }}</strong><span class="ac-used-tag">USED</span>
+                  <div class="ac-sub">{{ u.customerName }} · {{ fd(u.date) }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-if="dnoStatus.txt" class="dns" :class="dnoStatus.cls">{{ dnoStatus.txt }}</div>
+          </div>
+        </div>
+
+        <!-- Financier — editable, autocomplete from past customers, default SMFG -->
+        <div class="fg">
+          <label>Financier / HP Company</label>
+          <div class="ac-wrap">
+            <input v-model="f.hp" type="text" placeholder="SMFG INDIA CREDIT COMPANY LIMITED"
+              @input="onHpInput" @focus="onHpFocus" @blur="setTimeout(()=>acHp=false,250)" autocomplete="off">
+            <div class="ac-drop" :class="{open:acHp}">
+              <div v-for="h in hpSug" :key="h" class="ac-item" @click="f.hp=h;acHp=false;touchDate()">{{ h }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VEHICLE TAB ═══ -->
+    <div class="tab-pane" :class="{active:tab==='vehicle'}">
+      <div class="card">
+        <div class="card-ttl"><span class="ti">🏍</span> Vehicle Details</div>
+        <div class="fg">
+          <label>Model Name</label>
+          <div class="ac-wrap">
+            <input v-model="f.model" type="text" placeholder="Burgman Street OBD 2"
+              @input="onModelInput" @focus="onModelFocus" @blur="setTimeout(()=>acModel=false,250)" autocomplete="off">
+            <div class="ac-drop" :class="{open:acModel}">
+              <div v-for="m in modelSug" :key="m" class="ac-item" @click="selectModel(m)">
+                {{ m }}
+                <div v-if="mData[m.toLowerCase()]?.onroad" class="ac-sub">₹{{ fmt(mData[m.toLowerCase()].onroad) }} on-road</div>
+              </div>
+            </div>
+          </div>
+          <div v-if="!f.model && uModels.length" class="tip" style="margin-top:4px;">Start typing to search {{ uModels.length }} saved models</div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Engine No.</label><input v-model="f.engno" type="text" placeholder="AF215547135" @input="touchDate"></div>
+          <div class="fg"><label>Chassis No.</label><input v-model="f.chassis" type="text" placeholder="MB8EA115BT8356692" @input="touchDate"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FINANCE TAB ═══ -->
+    <div class="tab-pane" :class="{active:tab==='financials'}">
+
+      <!-- Smart suggestion — single card if model has saved data -->
+      <div v-if="onroadSuggestions.length" class="card" style="border-color:var(--g400);border-width:2px;">
+        <div class="card-ttl" style="color:var(--g700);margin-bottom:8px;"><span class="ti">💡</span> Smart Suggestion — {{ f.model }}</div>
+        <div class="sug-box" style="margin-top:0;">
+          <div class="sug-box-title" style="font-size:.59rem;color:var(--muted);">{{ onroadSuggestions[0].label }}</div>
+          <div class="sug-row"><span class="sug-lbl">Ex-Showroom</span><span class="sug-val">₹{{ fmt(onroadSuggestions[0].ex) }}</span></div>
+          <div class="sug-row"><span class="sug-lbl">RTO</span><span class="sug-val">₹{{ fmt(onroadSuggestions[0].rto) }}</span></div>
+          <div class="sug-row"><span class="sug-lbl">Insurance</span><span class="sug-val">₹{{ fmt(onroadSuggestions[0].ins) }}</span></div>
+          <div class="sug-row"><span class="sug-lbl">HP</span><span class="sug-val">₹500</span></div>
+          <div class="sug-row"><span class="sug-lbl">Accessories</span><span class="sug-val">₹2,000</span></div>
+          <div class="sug-row sug-total"><span>On-Road Total</span><span>₹{{ fmt(onroadSuggestions[0].total) }}</span></div>
+          <button class="sug-apply" @click="applySuggestion(onroadSuggestions[0])">✅ Apply to form</button>
+        </div>
+      </div>
+
+      <!-- Quick-Fill card -->
+      <div class="card">
+        <div class="card-ttl"><span class="ti">⚡</span> Quotation Quick-Fill</div>
+        <p class="tip" style="margin-bottom:10px;">Enter approx On-Road → Ex-Showroom back-calculated. HP=₹500 &amp; Acc=₹2,000 fixed.</p>
+        <div class="fg">
+          <label>Approx On-Road Price</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input v-model.number="qApprox" type="number" placeholder="130000" inputmode="numeric" @input="quotCalc" style="flex:1;min-width:0;">
+            <button class="btn btn-outline btn-sm" @click="quotRandom" style="flex-shrink:0;white-space:nowrap;">🎲 Re-roll</button>
+          </div>
+        </div>
+        <div v-if="qv.total" style="margin-top:10px;">
+          <div class="cr"><span class="cr-lbl">Ex-Showroom</span><span>₹{{ fmt(qv.ex) }}</span></div>
+          <div class="cr"><span class="cr-lbl">RTO</span><span>₹{{ fmt(qv.rto) }}</span></div>
+          <div class="cr"><span class="cr-lbl">Insurance</span><span>₹{{ fmt(qv.ins) }}</span></div>
+          <div class="cr"><span class="cr-lbl">HP</span><span>₹500</span></div>
+          <div class="cr"><span class="cr-lbl">Accessories</span><span>₹2,000</span></div>
+          <div class="cr"><span class="cr-lbl">On-Road Total</span><span>₹{{ fmt(qv.total) }}</span></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:10px;" @click="applyQuot">✅ Apply to form</button>
+        </div>
+      </div>
+
+      <!-- On-road breakdown -->
+      <div class="card">
+        <div class="card-ttl"><span class="ti">🛣</span> On-Road Breakdown</div>
+        <div class="fg">
+          <label>On-Road Total <span class="badge b-auto">enter this — fixed</span></label>
+          <input v-model.number="f.onroad" type="number" placeholder="130000" inputmode="numeric" @input="calc();touchDate()">
+        </div>
+        <p class="tip" style="margin-bottom:10px;">Fix On-Road first. Changing charges below back-calculates Ex-Showroom.</p>
+        <div class="row3">
+          <div class="fg">
+            <label>RTO</label>
+            <input v-model.number="f.rto" type="number" placeholder="12000" inputmode="numeric" @input="calc();touchDate()">
+            <span v-if="rtoPct!==null" :class="['pct-tag',rtoPct<15?'pct-ok':'pct-err']">{{ rtoPct.toFixed(1) }}%</span>
+          </div>
+          <div class="fg">
+            <label>Insurance</label>
+            <input v-model.number="f.insurance" type="number" placeholder="5500" inputmode="numeric" @input="calc();touchDate()">
+          </div>
+          <div class="fg">
+            <label>HP <span class="badge b-auto">₹500</span></label>
+            <input v-model.number="f.hpcharge" type="number" inputmode="numeric" @input="calc();touchDate()">
+          </div>
+          <div class="fg">
+            <label>Accessories <span class="badge b-auto">₹2000</span></label>
+            <input v-model.number="f.accessories" type="number" inputmode="numeric" @input="calc();touchDate()">
+          </div>
+          <div class="fg span-full" style="grid-column:1/-1">
+            <label>Ex-Showroom <span class="badge b-auto">auto</span></label>
+            <input :value="f.exshowroom" type="number" readonly>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- IDV saved per model in vehicles DB -->
+        <div class="fg">
+          <label>IDV Value <span class="badge b-auto">saved per model</span></label>
+          <div class="ac-wrap">
+            <input v-model.number="f.idv" type="number" placeholder="98000" inputmode="numeric"
+              @input="onIdvChange();touchDate()" @focus="onIdvFocus" @blur="setTimeout(()=>acIdv=false,250)" autocomplete="off">
+            <div class="ac-drop" :class="{open:acIdv}">
+              <div v-for="s in idvSug" :key="s.label" class="ac-item" @click="f.idv=s.val;acIdv=false;onIdvChange()">{{ s.label }}</div>
+            </div>
+          </div>
+          <span v-if="idvPct!==null" :class="['pct-tag',idvPct>=90?'pct-ok':'pct-err']">IDV {{ idvPct.toFixed(1) }}% of Ex-Showroom</span>
+        </div>
+
+        <div class="divider"></div>
+        <div class="card-ttl" style="margin-top:0;margin-bottom:12px;"><span class="ti">📊</span> GST Breakdown</div>
+        <div class="row3">
+          <div class="fg"><label>CGST 9% <span class="badge b-auto">auto</span></label><input :value="f.cgst" type="number" readonly></div>
+          <div class="fg"><label>SGST 9% <span class="badge b-auto">auto</span></label><input :value="f.sgst" type="number" readonly></div>
+          <div class="fg"><label>Basic <span class="badge b-auto">auto</span></label><input :value="f.basic" type="number" readonly></div>
+        </div>
+        <p class="tip">CGST = SGST = Ex × 9/118 &nbsp;|&nbsp; Basic = Ex − CGST − SGST</p>
+
+        <div class="divider"></div>
+        <div class="card-ttl" style="margin-top:0;margin-bottom:12px;"><span class="ti">💵</span> Down Payment</div>
+        <div class="row2">
+          <div class="fg"><label>Cash Received</label>
+            <input v-model.number="f.cash" type="number" placeholder="38500" inputmode="numeric" @input="autoCash();touchDate()"></div>
+          <div class="fg"><label>Amount in Words <span class="badge b-auto">auto</span></label>
+            <input v-model="f.words" type="text" placeholder="THIRTY EIGHT THOUSAND ONLY" @input="touchDate"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ GENERATE TAB ═══ -->
+    <div class="tab-pane" :class="{active:tab==='generate'}">
+      <div class="card">
+        <div class="card-ttl"><span class="ti">👁</span> Summary</div>
+        <div class="cr"><span class="cr-lbl">Customer</span><span>{{ f.name||'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">Organisation</span><span>{{ currentOrg?currentOrg.name:'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">Model</span><span>{{ f.model||'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">Financier</span><span style="font-size:.75rem;">{{ f.hp||'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">Doc No.</span><span>{{ f.invno?'#'+f.invno:'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">Ex-Showroom</span><span>{{ f.exshowroom?'₹'+fmt(f.exshowroom):'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">On-Road Total</span><span>{{ f.onroad?'₹'+fmt(f.onroad):'—' }}</span></div>
+        <div class="cr"><span class="cr-lbl">Cash Received</span><span>{{ f.cash?'₹'+fmt(f.cash):'—' }}</span></div>
+      </div>
+      <div class="card">
+        <div class="card-ttl"><span class="ti">📄</span> Generate PDFs</div>
+        <div style="display:flex;flex-direction:column;gap:13px;">
+          <div>
+            <div style="font-size:.64rem;font-weight:800;color:var(--g600);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;">📦 All Plain Docs — 2-Page PDF</div>
+            <button class="gen-btn-all" @click="genAllPlain">
+              📄 Download All 3 Plain Docs
+              <small>Page 1: Receipt + Quotation · Page 2: Invoice</small>
+            </button>
+          </div>
+          <div class="divider" style="margin:0;"></div>
+          <div>
+            <div style="font-size:.64rem;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;">📋 Quotation</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="gen-btn quot" @click="genSingle('quotation',true)">🔏 Stamped<small>quo-NAME-stamped.pdf</small></button>
+              <button class="gen-btn quot" style="opacity:.8;" @click="genSingle('quotation',false)">📄 Plain<small>quo-NAME-plain.pdf</small></button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:.64rem;font-weight:800;color:var(--g600);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;">💵 Receipt</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="gen-btn recv" @click="genSingle('receipt',true)">🔏 Stamped<small>rec-NAME-stamped.pdf</small></button>
+              <button class="gen-btn recv" style="opacity:.8;" @click="genSingle('receipt',false)">📄 Plain<small>rec-NAME-plain.pdf</small></button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:.64rem;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;">🧾 Invoice</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="gen-btn invc" @click="genSingle('invoice',true)">🔏 Stamped<small>inv-NAME-stamped.pdf</small></button>
+              <button class="gen-btn invc" style="opacity:.8;" @click="genSingle('invoice',false)">📄 Plain<small>inv-NAME-plain.pdf</small></button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:13px;padding-top:11px;border-top:1.5px solid var(--bdr);flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" @click="saveCust(true)">💾 Save Customer</button>
+          <button class="btn btn-ghost btn-sm" @click="clearForm">🗑 Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DOCS TAB ═══ -->
+    <div class="tab-pane" :class="{active:tab==='docs'}">
+
+      <!-- ── SHARED CUSTOMER SIGNATURE ── -->
+      <div class="doc-section">
+        <div class="doc-section-ttl"><span class="ti">✍️</span> Customer Signature <span class="badge b-green" style="margin-left:4px;">used in all 3 docs</span></div>
+        <p class="tip" style="margin-bottom:10px;">Draw once — applied to OSV, Related Party &amp; T&C automatically.</p>
+
+        <div class="fg">
+          <label>Customer Name <span class="badge b-auto">auto from quotation</span></label>
+          <input :value="f.name||docsState.tcCustName" type="text" readonly style="background:var(--bg2);color:var(--muted);">
+        </div>
+
+        <!-- Normal sig pad -->
+        <div class="sig-wrap" style="height:140px;background:#fff;">
+          <canvas id="sig-cust" style="width:100%;height:140px;display:block;"></canvas>
+        </div>
+        <div class="sig-actions" style="gap:8px;">
+          <button class="sig-clear" @click="clearSig('sig-cust','custSign')">✕ Clear</button>
+          <button class="btn btn-outline btn-sm" @click="openSigFullscreen">⛶ Full Screen</button>
+          <span v-if="docsState.custSign" style="font-size:.72rem;color:var(--g600);font-weight:700;align-self:center;margin-left:auto;">✓ Ready</span>
+        </div>
+        <div v-if="docsState.custSign" style="margin-top:8px;padding:8px;background:var(--g50);border-radius:9px;border:1px solid var(--g200);">
+          <div style="font-size:.6rem;font-weight:700;color:var(--muted);margin-bottom:4px;">PREVIEW</div>
+          <img :src="docsState.custSign" style="max-height:48px;border-radius:5px;">
+        </div>
+        <div v-if="!docsState.custSign" class="tip" style="color:var(--amber);margin-top:5px;">⚠ Draw signature above or use Full Screen for better accuracy.</div>
+      </div>
+
+      <!-- ── RELATED PARTY FORM ── -->
+      <div class="doc-section">
+        <div class="doc-section-ttl"><span class="ti">🤝</span> 2. Related Party / Employee Disclosure</div>
+        <p class="tip" style="margin-bottom:10px;">Original SMFG form with borrower signature overlaid. "No" is pre-ticked.</p>
+
+        <div class="fg">
+          <label>Date</label>
+          <input v-model="docsState.rpDate" type="date" style="max-width:180px;">
+        </div>
+
+        <div v-if="docsState.custSign" style="margin:8px 0;padding:10px 13px;background:var(--g50);border:1px solid var(--g200);border-radius:10px;">
+          <div style="font-size:.72rem;font-weight:700;color:var(--g700);margin-bottom:5px;">Preview — Borrower Signature</div>
+          <img :src="docsState.custSign" style="max-height:50px;border-radius:6px;border:1px solid var(--bdr);">
+        </div>
+
+        <button class="btn btn-primary btn-full" style="margin-top:10px;" @click="genRelatedPartyPdf"
+          :disabled="!docsState.custSign">
+          📥 Download Related Party PDF
+        </button>
+        <p v-if="!docsState.custSign" class="tip" style="color:var(--amber);margin-top:5px;">⚠ Add customer signature in the section above first.</p>
+      </div>
+
+      <!-- ── T&C FORM ── -->
+      <div class="doc-section">
+        <div class="doc-section-ttl"><span class="ti">📝</span> 3. T&amp;C — दू-व्हीलरसाठी घोषणापत्र</div>
+        <p class="tip" style="margin-bottom:10px;">Original SMFG Gramshakti form (Version July-2025). Customer name, Lead ID, date, place, and signature are overlaid.</p>
+
+        <div class="row2">
+          <div class="fg">
+            <label>Applicant Name <span class="badge b-auto">auto</span></label>
+            <input :value="f.name||docsState.tcCustName" type="text" readonly style="background:var(--bg2);color:var(--muted);">
+          </div>
+          <div class="fg">
+            <label>Lead ID <span class="badge b-purple">manual</span></label>
+            <input v-model="docsState.tcLeadId" type="text" placeholder="SFTW260620019">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="fg">
+            <label>Date</label>
+            <input v-model="docsState.tcDate" type="date">
+          </div>
+          <div class="fg">
+            <label>Place</label>
+            <input v-model="docsState.tcPlace" type="text" placeholder="MUMBAI">
+          </div>
+        </div>
+
+        <div v-if="docsState.custSign" style="margin:8px 0;padding:10px 13px;background:var(--g50);border:1px solid var(--g200);border-radius:10px;">
+          <div style="font-size:.72rem;font-weight:700;color:var(--g700);margin-bottom:5px;">Preview — Applicant Signature</div>
+          <img :src="docsState.custSign" style="max-height:50px;border-radius:6px;border:1px solid var(--bdr);">
+        </div>
+
+        <button class="btn btn-primary btn-full" style="margin-top:10px;" @click="genTcPdf"
+          :disabled="!docsState.custSign">
+          📥 Download T&amp;C PDF
+        </button>
+        <p v-if="!docsState.custSign" class="tip" style="color:var(--amber);margin-top:5px;">⚠ Add customer signature in the section above first.</p>
+      </div>
+
+    </div><!-- /docs tab -->
+
+    </div><!-- /main-inner -->
+  </main>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bot-nav">
+  <button v-for="t in tabs" :key="t.id" class="bnb" :class="{active:tab===t.id}" @click="tab=t.id">
+    <span class="ico">{{ t.icon }}</span>{{ t.label }}
+  </button>
+</nav>
+
+<!-- TOAST / SPINNER -->
+<div class="toast" :class="{show:tShow,err:tType==='error',warn:tType==='warn'}">{{ tMsg }}</div>
+<div class="spin-ov" :class="{open:spinning}">
+  <div class="spinner"></div>
+  <div class="spin-msg">{{ spinMsg }}</div>
+</div>
+
+<!-- ORG MODAL -->
+<div class="modal-ov" :class="{open:orgModal}">
+  <div class="modal">
+    <div class="pill"></div>
+    <h2>{{ editOrgId ? 'Edit Organisation' : 'Add Organisation' }}</h2>
+    <div class="fg"><label>Company Name</label><input v-model="om.name" type="text" placeholder="SAI MOTORS"></div>
+    <div class="fg"><label>Address Line</label><input v-model="om.addr" type="text" placeholder="MG 43 1/2 SAI MOTOR..."></div>
+    <div class="row2">
+      <div class="fg"><label>GST No.</label><input v-model="om.gst" type="text" placeholder="27AKNPS6608R1Z2"></div>
+      <div class="fg"><label>Bank Name</label><input v-model="om.bank" type="text" placeholder="HDFC BANK"></div>
+    </div>
+    <div class="fg"><label>NEFT A/C No.</label><input v-model="om.neft" type="text" placeholder="50200029454770"></div>
+    <div class="fg">
+      <label>Stamp / Seal Image <span style="font-size:.6rem;color:var(--muted);font-style:italic;text-transform:none;">(stored as base64 in Firestore — keep under 800KB)</span></label>
+      <input type="file" accept="image/*" @change="prevStamp">
+      <img v-if="om.stamp" :src="om.stamp" style="max-width:80px;margin-top:6px;border-radius:8px;border:1.5px solid var(--bdr);">
+      <button v-if="om.stamp" class="btn btn-danger btn-xs" style="margin-top:4px;align-self:flex-start;" @click="om.stamp=''">Remove stamp</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" @click="orgModal=false">Cancel</button>
+      <button class="btn btn-primary" @click="saveOrg">Save Organisation</button>
+    </div>
+  </div>
+</div>
+
+<!-- FULLSCREEN SIGNATURE OVERLAY -->
+<div class="sig-fs-ov" :class="{open:sigFsOpen}">
+  <div class="sig-fs-hdr">
+    <h3>✍️ Customer Signature</h3>
+    <div style="display:flex;gap:8px;">
+      <button class="sig-clear" @click="clearFsSig" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.3);">✕ Clear</button>
+      <button class="btn btn-primary btn-sm" @click="saveFsSig">✓ Done</button>
+    </div>
+  </div>
+  <div class="sig-fs-body">
+    <canvas id="sig-cust-fs" class="sig-fs-canvas"></canvas>
+    <div style="padding:10px 16px;font-size:.72rem;color:var(--muted);text-align:center;">Sign above using your finger or stylus. Tap <strong>Done</strong> to save.</div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-ov" :class="{open:confirmDeleteId!==null}" @click.self="confirmDeleteId=null">
+  <div class="modal" style="max-height:260px;">
+    <div class="pill"></div>
+    <h2 style="color:var(--red);">🗑 Delete Customer?</h2>
+    <p style="font-size:.85rem;color:var(--txt2);margin-bottom:4px;">Are you sure you want to delete <strong>{{ confirmDeleteName }}</strong>? This cannot be undone.</p>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" @click="confirmDeleteId=null">Cancel</button>
+      <button class="btn btn-danger" @click="doDeleteCust">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- pdf-ct created dynamically in JS -->
+</template><!-- /authUser -->
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  FIREBASE CONFIG — paste your project config here
+// ══════════════════════════════════════════════════════
+const FB_CONFIG= {
+  apiKey: "AIzaSyCP2zRn6UVGUTXUg8a-34vktLovyY8tlL4",
+  authDomain: "my-web-app-51d3a.firebaseapp.com",
+  projectId: "my-web-app-51d3a",
+  storageBucket: "my-web-app-51d3a.firebasestorage.app",
+  messagingSenderId: "780761838193",
+  appId: "1:780761838193:web:8432f2ef3b239d130461d0",
+  measurementId: "G-35G7CS414X"
+};
+// Firestore structure:
+//   moindocs/state  → { orgs, customers, usedNos, mData, ts }
+//   mData[modelKey] → { onroad, idvValues[], insurance, idvAvg }
+// Stamp images stored as base64 strings inside org objects (free-tier Firestore OK if < 900KB per doc)
+
+// PDF base64 strings loaded from external files (tc_pdf.js, rp_pdf.js)
+// ── UTILS ──
+function n2w(n){
+  const o=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const t=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  function c(x){if(!x)return'';if(x<20)return o[x];if(x<100)return t[Math.floor(x/10)]+(x%10?' '+o[x%10]:'');
+    if(x<1000)return o[Math.floor(x/100)]+' hundred'+(x%100?' '+c(x%100):'');
+    if(x<100000)return c(Math.floor(x/1000))+' thousand'+(x%1000?' '+c(x%1000):'');
+    if(x<10000000)return c(Math.floor(x/100000))+' lakh'+(x%100000?' '+c(x%100000):'');
+    return c(Math.floor(x/10000000))+' crore'+(x%10000000?' '+c(x%10000000):'');}
+  return c(Math.round(n));
+}
+const pf = v => parseFloat(v) || 0;
+const fmt = v => { const x = parseFloat(v); return (!x && x !== 0) ? '' : x.toLocaleString('en-IN'); };
+const today = () => new Date().toISOString().split('T')[0];
+const fd = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
+
+const { createApp, ref, computed, reactive } = Vue;
+
+createApp({
+  setup() {
+    // ── AUTH STATE ──
+    const authUser = ref(null);
+    const authChecked = ref(false);
+    const authError = ref('');
+
+    // ── STATE ──
+    const orgs = ref([]);
+    const customers = ref([]);
+    const usedNos = ref({});
+    // mData: { [modelKey]: { onroad, idvValues:[], idvAvg, insurance } }
+    const mData = ref({});
+
+    const curCustId = ref(null);
+    const editOrgId = ref(null);
+    const tab = ref('customer');
+    const sideOpen = ref(false);
+
+    const tabs = [
+      { id: 'customer',   icon: '👤', label: 'Customer' },
+      { id: 'vehicle',    icon: '🏍', label: 'Vehicle' },
+      { id: 'financials', icon: '💰', label: 'Finance' },
+      { id: 'generate',   icon: '📄', label: 'Generate' },
+      { id: 'docs',       icon: '📋', label: 'Docs' },
+    ];
+
+    const bf = () => ({
+      name:'', address:'', date:today(), invno:'', hp:'SMFG INDIA CREDIT COMPANY LIMITED',
+      model:'', engno:'', chassis:'',
+      exshowroom:'', rto:'', insurance:'', hpcharge:500, accessories:2000,
+      onroad:'', basic:'', cgst:'', sgst:'', cash:'', words:'',
+      idv:'', orgId:''
+    });
+    const f = reactive(bf());
+
+    const qApprox = ref('');
+    const qv = reactive({ ex:0, rto:0, ins:0, hp:500, acc:2000, total:0 });
+
+    const orgModal = ref(false);
+    const om = reactive({ name:'', addr:'', gst:'', bank:'', neft:'', stamp:'' });
+
+    // ── OSV OFFICER (default, saved per user) ──
+    const sigFsOpen = ref(false);
+    let fsSigPadInited = false;
+
+    // ── DOCS STATE ──
+    // ONE signature is used across ALL 3 docs (OSV, Related Party, T&C)
+    const docsState = reactive({
+      // OSV doc
+      // Shared customer signature — used in RP, and T&C
+      custSign: '',
+      // Related Party
+      rpDate: today(),
+      // T&C
+      tcDate: today(),
+      tcPlace: 'MUMBAI',
+      tcCustName: '',       // auto-filled from f.name
+      tcLeadId: '',         // manual Lead ID entry
+    });
+
+    // UI
+    const tMsg = ref(''), tShow = ref(false), tType = ref('success');
+    let tTid = null;
+    const spinning = ref(false), spinMsg = ref('');
+    const acDocno = ref(false), acHp = ref(false), acModel = ref(false);
+    const acIdv = ref(false);
+    const confirmDeleteId = ref(null), confirmDeleteName = ref('');
+
+    // Firebase
+    const fbSyncing = ref(false), fbMsg = ref(''), fbMsgCls = ref('');
+    let db = null;
+
+    function toast(m, tp = 'success') {
+      tMsg.value = m; tType.value = tp; tShow.value = true;
+      clearTimeout(tTid); tTid = setTimeout(() => tShow.value = false, 3200);
+    }
+    function spin(m) { spinMsg.value = m; spinning.value = true; }
+    function unspin() { spinning.value = false; }
+
+    // ══ FIREBASE ══
+    function initFb() {
+      try {
+        const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FB_CONFIG);
+        db = app.firestore();
+        const auth = app.auth();
+        fbMsg.value = ''; fbMsgCls.value = '';
+        // Listen for auth state
+        auth.onAuthStateChanged(user => {
+          authUser.value = user;
+          authChecked.value = true;
+          if (user) {
+            loadFb();
+          } else {
+            loadLocal();
+          }
+        });
+      } catch (e) {
+        console.warn('Firebase:', e);
+        authChecked.value = true;
+        fbMsg.value = '⚠ Firebase not configured — using local storage';
+        fbMsgCls.value = 'warn';
+        loadLocal();
+      }
+    }
+
+    async function signInGoogle() {
+      try {
+        authError.value = '';
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithPopup(provider);
+      } catch (e) {
+        authError.value = e.message || 'Sign-in failed';
+      }
+    }
+
+    async function signOut() {
+      if (!confirm('Sign out?')) return;
+      await firebase.auth().signOut();
+      // Clear all user-specific data from memory
+      customers.value = [];
+      usedNos.value = {};
+      mData.value = {};
+      curCustId.value = null;
+      Object.assign(f, bf());
+      authUser.value = null;
+    }
+
+    // Helper: get the user-scoped doc path for customers/vehicles
+    function userDocId() {
+      return authUser.value ? authUser.value.uid : 'anonymous';
+    }
+
+    async function loadFb() {
+      fbMsg.value = '☁ Loading…'; fbMsgCls.value = '';
+      try {
+        const uid = userDocId();
+        // Load shared org data
+        const orgSnap = await db.collection('moindocs').doc('orgs').get();
+        if (orgSnap.exists) {
+          const d = orgSnap.data();
+          if (d.orgs) orgs.value = d.orgs;
+        }
+        // ── Always reset user-specific data before loading ──
+        // This ensures one user never sees another user's customers
+        customers.value = [];
+        usedNos.value = {};
+        mData.value = {};
+        // Load user-specific customers + usedNos
+        const userSnap = await db.collection('moindocs_users').doc(uid).get();
+        if (userSnap.exists) {
+          const d = userSnap.data();
+          if (d.customers) customers.value = d.customers;
+          if (d.usedNos && !Array.isArray(d.usedNos)) usedNos.value = d.usedNos;
+        }
+        // Load user-specific vehicle data
+        const vSnap = await db.collection('moindocs_users').doc(uid + '_vehicles').get();
+        if (vSnap.exists) {
+          const vd = vSnap.data();
+          if (vd.mData) mData.value = vd.mData;
+        }
+        saveLocal();
+        setTimeout(() => { fbMsg.value = ''; fbMsgCls.value = ''; }, 2500);
+        if (orgs.value.length && !f.orgId) f.orgId = orgs.value[0].id;
+        autoNo();
+      } catch (e) {
+        console.error(e);
+        fbMsg.value = '⚠ Firebase error — using local data';
+        fbMsgCls.value = 'err';
+        loadLocal();
+      }
+    }
+
+    async function pushFb() {
+      if (!db) return;
+      fbSyncing.value = true;
+      const uid = userDocId();
+      try {
+        // ── 1. Save shared org data (all users can read/write) ──
+        await db.collection('moindocs').doc('orgs').set({
+          orgs: orgs.value,
+          ts: new Date().toISOString()
+        });
+        // ── 2. Save user-specific customers + usedNos ──
+        await db.collection('moindocs_users').doc(uid).set({
+          customers: customers.value,
+          usedNos: usedNos.value,
+          ts: new Date().toISOString()
+        });
+        // ── 3. Save user-specific vehicle/model data ──
+        await db.collection('moindocs_users').doc(uid + '_vehicles').set({
+          mData: mData.value,
+          ts: new Date().toISOString()
+        });
+        saveLocal();
+        fbSyncing.value = false;
+      } catch (e) {
+        console.error('Firestore save error:', e);
+        toast('Cloud save failed — saved locally ⚠', 'warn');
+        saveLocal();
+        fbSyncing.value = false;
+      }
+    }
+
+    // Called every time data changes
+    function save() {
+      saveLocal(); // immediate local save
+      pushFb();    // async cloud save
+    }
+
+    function localKey() {
+      return authUser.value ? `moin_v5_${authUser.value.uid}` : 'moin_v5_anon';
+    }
+
+    function saveLocal() {
+      try {
+        localStorage.setItem(localKey(), JSON.stringify({
+          orgs: orgs.value, customers: customers.value,
+          usedNos: usedNos.value, mData: mData.value
+        }));
+      } catch (e) {}
+    }
+
+    function loadLocal() {
+      try {
+        const r = localStorage.getItem(localKey());
+        if (r) {
+          const p = JSON.parse(r);
+          if (p.orgs) orgs.value = p.orgs;
+          // Only load user-specific data if we have a uid match
+          if (p.customers) customers.value = p.customers;
+          if (p.usedNos && !Array.isArray(p.usedNos)) usedNos.value = p.usedNos;
+          if (p.mData) mData.value = p.mData;
+        }
+        if (orgs.value.length && !f.orgId) f.orgId = orgs.value[0].id;
+        autoNo();
+      } catch (e) {}
+    }
+
+    async function manualSync() {
+      if (!db) { toast('Firebase not configured', 'warn'); return; }
+      await loadFb(); toast('Synced ✓');
+    }
+
+    // ── MODEL DATA helpers ──
+    function getMd(model) {
+      if (!model) return null;
+      return mData.value[model.toLowerCase()] || null;
+    }
+
+    function ensureMd(model) {
+      if (!model) return;
+      const k = model.toLowerCase();
+      if (!mData.value[k]) mData.value[k] = { onroad: 0, idvValues: [], idvAvg: 0, insurance: 0 };
+      return mData.value[k];
+    }
+
+    function saveMdOnroad(model, onroad) {
+      if (!model || !onroad) return;
+      const md = ensureMd(model);
+      md.onroad = pf(onroad);
+    }
+
+    // RTO tax amount saved per model — always overwrite with latest value
+    function saveMdRto(model, rto) {
+      if (!model || !rto) return;
+      const md = ensureMd(model);
+      md.rto = pf(rto);
+    }
+
+    // IDV: accumulate values, store avg
+    function saveMdIdv(model, idv) {
+      if (!model || !idv) return;
+      const md = ensureMd(model);
+      if (!md.idvValues) md.idvValues = [];
+      const v = pf(idv);
+      if (md.idvValues[md.idvValues.length - 1] !== v) md.idvValues.push(v);
+      if (md.idvValues.length > 10) md.idvValues = md.idvValues.slice(-10);
+      md.idvAvg = Math.round(md.idvValues.reduce((a, b) => a + b, 0) / md.idvValues.length);
+      // Also save calculated ex-showroom = idvAvg * 110%
+      md.exCalc = Math.round(md.idvAvg * 1.10);
+    }
+
+    function saveMdInsurance(model, ins) {
+      if (!model || !ins) return;
+      const md = ensureMd(model);
+      // Always overwrite with latest correct value
+      md.insurance = pf(ins);
+    }
+
+    // ── ORG ──
+    const currentOrg = computed(() => orgs.value.find(o => o.id === f.orgId) || null);
+
+    function onOrgChange() { autoNo(); toast('Org changed', 'warn'); }
+    function openOrgModal(eid = null) {
+      editOrgId.value = eid;
+      if (eid) {
+        const o = orgs.value.find(x => x.id === eid);
+        Object.assign(om, { name:o.name, addr:o.addr, gst:o.gst, bank:o.bank, neft:o.neft, stamp:o.stamp||'' });
+      } else {
+        Object.assign(om, { name:'', addr:'', gst:'', bank:'', neft:'', stamp:'' });
+      }
+      orgModal.value = true;
+    }
+    function editOrg() { openOrgModal(f.orgId); }
+    function deleteOrg() {
+      if (!confirm('Delete this organisation?')) return;
+      delete usedNos.value[f.orgId];
+      orgs.value = orgs.value.filter(o => o.id !== f.orgId);
+      f.orgId = ''; save();
+    }
+    function prevStamp(e) {
+      const file = e.target.files[0]; if (!file) return;
+      // Warn if file is large
+      if (file.size > 800 * 1024) {
+        toast('Image > 800KB — Firestore may reject it. Compress first.', 'warn');
+      }
+      const r = new FileReader();
+      r.onload = ev => { om.stamp = ev.target.result; };
+      r.readAsDataURL(file);
+    }
+    function saveOrg() {
+      if (!om.name.trim()) { toast('Company name required', 'error'); return; }
+      const o = { id:editOrgId.value||Date.now().toString(), name:om.name.trim(), addr:om.addr, gst:om.gst, bank:om.bank, neft:om.neft, stamp:om.stamp };
+      if (editOrgId.value) {
+        const i = orgs.value.findIndex(x => x.id === editOrgId.value);
+        if (i > -1) orgs.value[i] = o;
+      } else {
+        orgs.value.push(o); f.orgId = o.id;
+      }
+      save(); orgModal.value = false; toast('Organisation saved!');
+    }
+
+    // ── CUSTOMERS ──
+    const uModels = computed(() => {
+      const s = new Set();
+      customers.value.forEach(c => { if (c.model) s.add(c.model); });
+      // also include models from mData
+      Object.keys(mData.value).forEach(k => {
+        const found = [...s].find(m => m.toLowerCase() === k);
+        if (!found && mData.value[k].onroad) s.add(k);
+      });
+      return [...s];
+    });
+
+    function getOrgNos() { if (!f.orgId) return []; return usedNos.value[f.orgId] || []; }
+    function touchDate() { f.date = today(); }
+
+    function gd() {
+      return {
+        name:f.name, address:f.address, date:f.date, invno:f.invno, hp:f.hp,
+        model:f.model, engno:f.engno, chassis:f.chassis,
+        exshowroom:f.exshowroom, rto:f.rto, insurance:f.insurance,
+        hpcharge:f.hpcharge, accessories:f.accessories, onroad:f.onroad,
+        basic:f.basic, cgst:f.cgst, sgst:f.sgst,
+        cash:f.cash, words:f.words, idv:f.idv, orgId:f.orgId
+      };
+    }
+
+    function sd(d) {
+      Object.assign(f, {
+        name:d.name||'', address:d.address||'', date:d.date||today(),
+        invno:d.invno||'', hp:d.hp||'SMFG INDIA CREDIT COMPANY LIMITED',
+        model:d.model||'', engno:d.engno||'', chassis:d.chassis||'',
+        exshowroom:d.exshowroom||'', rto:d.rto||'', insurance:d.insurance||'',
+        hpcharge:d.hpcharge||500, accessories:d.accessories||2000,
+        onroad:d.onroad||'', basic:d.basic||'', cgst:d.cgst||'', sgst:d.sgst||'',
+        cash:d.cash||'', words:d.words||'', idv:d.idv||'', orgId:d.orgId||''
+      });
+      if (d.model) autoFillFromModel(d.model, false);
+    }
+
+    function saveCust(showToast = false) {
+      const d = gd();
+      if (!d.name) { if (showToast) toast('Enter customer name first', 'error'); return false; }
+      // Save vehicle data per model
+      if (d.model) {
+        if (d.onroad) saveMdOnroad(d.model, d.onroad);
+        if (d.idv) saveMdIdv(d.model, d.idv);       // IDV saved per model
+        if (d.rto) saveMdRto(d.model, d.rto);        // RTO saved per model
+        if (d.insurance) saveMdInsurance(d.model, d.insurance); // insurance saved per model
+      }
+      const ex = curCustId.value ? customers.value.find(c => c.id === curCustId.value) : null;
+      if (ex) { Object.assign(ex, d); }
+      else {
+        if (customers.value.length >= 50) customers.value.shift();
+        const id = Date.now().toString();
+        customers.value.push({ id, ...d });
+        curCustId.value = id;
+      }
+      if (d.invno && d.orgId) {
+        if (!usedNos.value[d.orgId]) usedNos.value[d.orgId] = [];
+        const arr = usedNos.value[d.orgId];
+        const al = arr.find(u => u.no === d.invno);
+        if (!al) arr.push({ no:d.invno, customerName:d.name, date:d.date });
+        else { al.customerName = d.name; al.date = d.date; }
+      }
+      save();
+      if (showToast) toast('Customer saved ✓');
+      return true;
+    }
+
+    function loadCustomer(id) {
+      const c = customers.value.find(x => x.id === id);
+      if (!c) return;
+      curCustId.value = id; sd(c);
+    }
+    function confirmDeleteCust(id) {
+      const c = customers.value.find(x => x.id === id);
+      confirmDeleteName.value = c ? (c.name || 'Unnamed') : '';
+      confirmDeleteId.value = id;
+    }
+    function doDeleteCust() {
+      const id = confirmDeleteId.value;
+      if (!id) return;
+      customers.value = customers.value.filter(c => c.id !== id);
+      if (curCustId.value === id) curCustId.value = null;
+      confirmDeleteId.value = null;
+      save();
+      toast('Customer deleted');
+    }
+    function deleteCust(id) {
+      customers.value = customers.value.filter(c => c.id !== id);
+      if (curCustId.value === id) curCustId.value = null;
+      save();
+    }
+    function newCustomer() {
+      curCustId.value = null;
+      const b = bf(); b.orgId = f.orgId;
+      Object.assign(f, b); autoNo();
+    }
+    function clearForm() {
+      const id = f.orgId;
+      Object.assign(f, bf()); f.orgId = id; autoNo();
+    }
+
+    // ── DOC NO ──
+    const dnoSug = computed(() => {
+      const v = f.invno;
+      return getOrgNos().filter(u => !v || u.no.toString().includes(v));
+    });
+    const dnoStatus = computed(() => {
+      const no = (f.invno || '').trim(); if (!no) return { txt:'', cls:'' };
+      const used = getOrgNos().find(u => u.no === no);
+      const self = curCustId.value ? (customers.value.find(c => c.id === curCustId.value) || {}).invno : null;
+      const orgName = currentOrg.value?.name || 'this org';
+      if (used && self !== no) return { txt:`⚠ #${no} used by ${used.customerName} (${fd(used.date)}) in ${orgName}`, cls:'warn' };
+      return { txt:`✓ #${no} available in ${orgName}`, cls:'ok' };
+    });
+    function autoNo() {
+      const nums = getOrgNos(); if (!nums.length) return;
+      const mx = nums.reduce((m, u) => { const n = parseInt(u.no, 10); return (!isNaN(n) && n > m) ? n : m; }, 0);
+      if (mx > 0 && !f.invno) f.invno = String(mx + 1);
+    }
+
+    // ── HP AC ──
+    const hpSug = ref([]);
+    function getHPs() {
+      const s = new Set();
+      customers.value.forEach(c => { if (c.hp) s.add(c.hp); });
+      s.add('SMFG INDIA CREDIT COMPANY LIMITED'); // always include default
+      return [...s];
+    }
+    function onHpInput() {
+      const v = f.hp.toLowerCase();
+      hpSug.value = getHPs().filter(h => h.toLowerCase().includes(v));
+      acHp.value = hpSug.value.length > 0;
+    }
+    function onHpFocus() { hpSug.value = getHPs(); acHp.value = hpSug.value.length > 0; }
+
+    // ── MODEL AC ──
+    const modelSug = ref([]);
+    function onModelInput() {
+      touchDate();
+      const v = f.model.toLowerCase();
+      if (!v) { acModel.value = false; return; }
+      modelSug.value = uModels.value.filter(m => m.toLowerCase().includes(v));
+      acModel.value = modelSug.value.length > 0;
+    }
+    function onModelFocus() { modelSug.value = uModels.value; acModel.value = modelSug.value.length > 0; }
+    function selectModel(m) {
+      f.model = m; acModel.value = false;
+      autoFillFromModel(m, true); touchDate();
+    }
+
+    function autoFillFromModel(model, withToast) {
+      if (!model) return;
+      const md = getMd(model);
+      if (!md) return;
+      let filled = [];
+      // Fill IDV from saved average
+      if (md.idvAvg) { f.idv = md.idvAvg; filled.push('IDV'); }
+      // Fill insurance from saved value
+      if (md.insurance) { f.insurance = md.insurance; filled.push('Insurance'); }
+      // Fill RTO from saved value
+      if (md.rto) { f.rto = md.rto; filled.push('RTO'); }
+      // Fill on-road and recalculate
+      if (md.onroad) {
+        f.onroad = md.onroad;
+        calc();
+        filled.push('On-Road');
+      }
+      if (withToast && filled.length) toast(`Auto-filled: ${filled.join(', ')}`);
+    }
+
+    // ── IDV ──
+    const idvSug = ref([]);
+    function onIdvChange() {
+      if (f.idv && f.model) { saveMdIdv(f.model, f.idv); save(); }
+    }
+    function onIdvFocus() {
+      const mk = f.model.toLowerCase();
+      idvSug.value = Object.entries(mData.value)
+        .filter(([k]) => !mk || k.includes(mk))
+        .map(([k, v]) => ({ label:`${k} → avg ₹${fmt(v.idvAvg||0)} (${(v.idvValues||[]).length} entries)`, val:v.idvAvg||0 }))
+        .filter(x => x.val > 0);
+      acIdv.value = idvSug.value.length > 0;
+    }
+
+    // ── INSURANCE per model ──
+    const insSug = ref([]);
+    function onInsuranceChange() {
+      if (f.correctInsurance && f.model) { saveMdInsurance(f.model, f.correctInsurance); save(); }
+    }
+    function onInsuranceFocus() {
+      const mk = f.model.toLowerCase();
+      insSug.value = Object.entries(mData.value)
+        .filter(([k]) => !mk || k.includes(mk))
+        .map(([k, v]) => ({ label:`${k} → ₹${fmt(v.insurance||0)}`, val:v.insurance||0 }))
+        .filter(x => x.val > 0);
+      acIns.value = insSug.value.length > 0;
+    }
+
+
+    // ── RTO TAX per model ──
+    const rtoSug = ref([]);
+    function onModelRtoChange() {
+      if (f.modelRto && f.model) { saveMdRto(f.model, f.modelRto); save(); }
+    }
+    function onModelRtoFocus() {
+      const mk = f.model.toLowerCase();
+      rtoSug.value = Object.entries(mData.value)
+        .filter(([k]) => !mk || k.includes(mk))
+        .map(([k, v]) => ({ label:`${k} → ₹${fmt(v.rto||0)}`, val:v.rto||0 }))
+        .filter(x => x.val > 0);
+      acRto.value = rtoSug.value.length > 0;
+    }
+
+    // ── RATE BADGES ──
+    const rtoPct = computed(() => { const e = pf(f.exshowroom), r = pf(f.rto); if (!e || !r) return null; return (r / e) * 100; });
+    const idvPct = computed(() => { const e = pf(f.exshowroom), i = pf(f.idv); if (!e || !i) return null; return (i / e) * 100; });
+
+    // ── SINGLE SMART SUGGESTION using all saved vehicle data ──
+    const onroadSuggestions = computed(() => {
+      const model = f.model; if (!model) return [];
+      const md = getMd(model); if (!md) return [];
+
+      // Need at least IDV or on-road to show a suggestion
+      const hasIdv = md.idvAvg && md.idvAvg > 0;
+      const hasOnroad = md.onroad && md.onroad > 0;
+      if (!hasIdv && !hasOnroad) return [];
+
+      // Build suggestion: prefer calculated (idv-based) if we have IDV + ins + rto
+      // Otherwise fall back to previously-used on-road
+      let ex, rto, ins, source;
+      const hp = 500, acc = 2000;
+
+      if (hasIdv && md.insurance && md.rto) {
+        // Full calculated suggestion: all data from vehicles DB
+        ex = md.exCalc || Math.round(md.idvAvg * 1.10);
+        rto = md.rto;
+        ins = md.insurance;
+        source = `IDV avg ₹${fmt(md.idvAvg)} × 110% + saved RTO & insurance`;
+      } else if (hasIdv && md.insurance) {
+        ex = md.exCalc || Math.round(md.idvAvg * 1.10);
+        rto = Math.round(ex * 0.088);
+        ins = md.insurance;
+        source = `IDV avg ₹${fmt(md.idvAvg)} × 110% + saved insurance`;
+      } else if (hasOnroad && md.insurance && md.rto) {
+        // Previously saved real on-road, derive ex from components
+        rto = md.rto; ins = md.insurance;
+        ex = Math.max(0, md.onroad - rto - ins - hp - acc);
+        source = `Previously used on-road ₹${fmt(md.onroad)}`;
+      } else {
+        // minimal — just onroad known
+        if (!hasOnroad) return [];
+        rto = md.rto || Math.round(md.onroad * 0.088);
+        ins = md.insurance || 5500;
+        ex = Math.max(0, md.onroad - rto - ins - hp - acc);
+        source = `Previously used on-road ₹${fmt(md.onroad)}`;
+      }
+
+      const total = ex + rto + ins + hp + acc;
+      return [{ label: source, ex, rto, ins, hp, acc, total }];
+    });
+
+    function applySuggestion(s) {
+      f.onroad = s.total;
+      f.rto = s.rto;
+      f.insurance = s.ins;
+      f.hpcharge = 500;
+      f.accessories = 2000;
+      calc(); touchDate();
+      toast('Suggestion applied!');
+    }
+
+    // ── CALCULATIONS ──
+    function calc() {
+      const o = pf(f.onroad), r = pf(f.rto), ins = pf(f.insurance), hp = pf(f.hpcharge), acc = pf(f.accessories);
+      const ex = Math.max(0, Math.round(o - r - ins - hp - acc));
+      f.exshowroom = ex || '';
+      if (ex) { const cg = Math.round(ex * 9 / 118), sg = Math.round(ex * 9 / 118); f.cgst = cg; f.sgst = sg; f.basic = ex - cg - sg; }
+      else { f.cgst = ''; f.sgst = ''; f.basic = ''; }
+    }
+
+    function autoCash() {
+      const c = pf(f.cash);
+      if (c) f.words = n2w(c).toUpperCase() + ' ONLY';
+    }
+
+    // ── QUICK FILL ──
+    function quotCalc() { if (!qApprox.value) { qv.total = 0; return; } quotRandom(); }
+    function quotRandom() {
+      const a = pf(qApprox.value); if (!a) { toast('Enter approx on-road first', 'warn'); return; }
+      const ins = Math.round(5000 + Math.random() * 1000), rto = Math.round(11000 + Math.random() * 1500);
+      const hp = 500, acc = 2000, ex = Math.max(0, Math.round(a - rto - ins - hp - acc));
+      Object.assign(qv, { ex, rto, ins, hp, acc, total: ex + rto + ins + hp + acc });
+    }
+    function applyQuot() {
+      if (!qv.total) return;
+      f.onroad = qv.total; f.rto = qv.rto; f.insurance = qv.ins;
+      f.hpcharge = 500; f.accessories = 2000;
+      calc(); touchDate(); toast('Values applied!');
+    }
+
+    // ══ PDF TEMPLATES ══
+    function PR(l, v, b = false) {
+      const s = b ? 'font-weight:900;' : 'font-weight:700;';
+      return `<div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:0.68;padding:5px 9px;font-size:10.5pt;border-right:1.5px solid #000;${s}">${l}</div><div style="flex:0.32;padding:5px 9px;font-size:10.5pt;text-align:right;${s}">${v}</div></div>`;
+    }
+    function PR2(l, v, b = false) {
+      const s = b ? 'font-weight:900;' : 'font-weight:700;';
+      return `<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:0.68;padding:3px 7px;font-size:8.5pt;border-right:1px solid #000;${s}">${l}</div><div style="flex:0.32;padding:3px 7px;font-size:8.5pt;text-align:right;${s}">${v}</div></div>`;
+    }
+
+    const TAX = `I/We hereby certify that my/our registration certificate under the Maharashtra Value Added Tax Act,2002 is in force on the date on which the sale of the goods specified in this Tax Invoice is made by me/us and that the transaction of sale covered by this Tax Invoice has been effected by me/us and it shall be accounted for in the turnover of sale while filing of return and the due tax, if any payable on the sales has been paid or shall be paid.`;
+
+    function buildParts(org, ws) {
+      const stamp = (ws && org.stamp) ? `<img src="${org.stamp}" style="width:80px;height:80px;object-fit:contain;">` : '<div style="width:80px;height:80px;"></div>';
+      const footer = `<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;"><div style="flex:1;font-size:7.5pt;line-height:1.7;color:#222;font-weight:600;padding-right:10px;">${TAX}</div><div style="text-align:center;min-width:105px;"><div style="font-size:9.5pt;font-weight:900;margin-bottom:4px;">${org.name}</div>${stamp}</div></div>`;
+      const hdr = `<div style="text-align:center;margin-bottom:4px;"><div style="font-size:22pt;font-weight:900;letter-spacing:1.5px;">${org.name}</div><div style="font-size:8pt;margin-top:3px;font-weight:700;">${org.addr}</div></div>`;
+      return { stamp, footer, hdr };
+    }
+
+    function tplQ(d, org, hdr, footer) {
+      const ex=pf(d.exshowroom),rto=pf(d.rto),ins=pf(d.insurance),hp=pf(d.hpcharge)||500,acc=pf(d.accessories)||2000;
+      const tot=pf(d.onroad)||(ex+rto+ins+hp+acc), totW=tot?n2w(tot).toUpperCase()+' ONLY':'';
+      return `${hdr}<div style="font-size:16pt;font-weight:900;text-align:center;text-decoration:underline;margin:8px 0 6px;letter-spacing:3px;">QUOTATION</div><div style="border:2.5px solid #000;"><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:700;border-right:1.5px solid #000;">NAME :- <b>${d.name}</b></div><div style="flex:0 0 44%;padding:5px 9px;font-size:10.5pt;font-weight:900;text-align:right;">QUOTATION NO &nbsp;${d.invno}</div></div><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:700;border-right:1.5px solid #000;">ADD:- ${d.address}</div><div style="flex:0 0 44%;padding:5px 9px;font-size:10.5pt;font-weight:700;">DATE :- &nbsp;${fd(d.date)}</div></div><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:1;padding:5px 9px;border-right:1.5px solid #000;"></div><div style="flex:0 0 44%;padding:5px 9px;font-size:9.5pt;font-weight:700;">HP:- ${d.hp}</div></div><div style="display:flex;border-bottom:1.5px solid #000;background:#f5f5f5;"><div style="flex:0.68;padding:5px 9px;font-size:10.5pt;font-weight:900;border-right:1.5px solid #000;">MODEL :- ${d.model}</div><div style="flex:0.32;padding:5px 9px;font-size:10.5pt;font-weight:900;text-align:right;">Amount</div></div>${PR('EX SHOWROOM',ex?'&#8377;'+fmt(ex):'')}${PR('RTO',rto?'&#8377;'+fmt(rto):'')}${PR('INSURANCE',ins?'&#8377;'+fmt(ins):'')}${PR('HP',hp?'&#8377;'+fmt(hp):'')}${PR('ACCESSORIES',acc?'&#8377;'+fmt(acc):'')}<div style="display:flex;border-bottom:1.5px solid #000;background:#fafafa;"><div style="flex:0.68;padding:5px 9px;font-size:10.5pt;font-weight:900;border-right:1.5px solid #000;">ON ROAD:- ${totW}</div><div style="flex:0.32;padding:5px 9px;font-size:10.5pt;font-weight:900;text-align:right;">${tot?fmt(tot):''}</div></div><div style="padding:5px 9px;font-size:9pt;font-weight:700;border-bottom:1.5px solid #000;">GST NO :- ${org.gst}</div><div style="padding:5px 9px;font-size:9pt;font-weight:700;">NEFT DETAIL :- ${org.bank} &nbsp; A/C NO:- ${org.neft}</div></div>${footer}`;
+    }
+
+    function tplR(d, org, hdr, stamp) {
+      const cash = pf(d.cash) || 0;
+      return `${hdr}<div style="font-size:16pt;font-weight:900;text-align:center;text-decoration:underline;letter-spacing:3px;margin:8px 0 6px;">RECEIPT</div><div style="border:2.5px solid #000;"><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:0 0 38%;padding:5px 9px;font-size:10.5pt;font-weight:900;border-right:1.5px solid #000;">RECEIPT NO :-</div><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:900;">${d.invno}</div></div><div style="border-bottom:1.5px solid #000;padding:5px 9px;font-size:10.5pt;font-weight:900;">NAME :- ${d.name}</div><div style="border-bottom:1.5px solid #000;padding:5px 9px;font-size:10.5pt;font-weight:700;">DATE :- ${fd(d.date)}</div><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:0 0 28%;padding:5px 9px;font-size:10.5pt;font-weight:900;border-right:1.5px solid #000;">HP TO</div><div style="flex:0 0 4%;padding:5px 3px;font-size:10.5pt;border-right:1.5px solid #000;font-weight:700;">:-</div><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:700;">${d.hp}</div></div><div style="border-bottom:1.5px solid #000;padding:5px 9px;">&nbsp;</div><div style="border-bottom:1.5px solid #000;padding:5px 9px;font-size:10.5pt;font-weight:900;">MODEL :- ${d.model}</div><div style="border-bottom:1.5px solid #000;padding:5px 9px;">&nbsp;</div><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:0 0 38%;padding:5px 9px;font-size:10.5pt;font-weight:900;border-right:1.5px solid #000;">CASH RECIVED :-</div><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:700;">${cash?fmt(cash)+' /-  ( CASH )':''}</div></div><div style="display:flex;"><div style="flex:0.52;padding:5px 9px;font-size:10pt;font-weight:700;border-right:1.5px solid #000;">AMOUNT IN WORDS :- <b>${d.words?d.words+' /-':''}</b></div><div style="flex:0.48;padding:5px 9px;text-align:center;"><div style="font-weight:900;margin-bottom:4px;">FOR ${org.name}</div>${stamp}</div></div></div>`;
+    }
+
+    function tplI(d, org, hdr, footer) {
+      const ex=pf(d.exshowroom)||0, cg=pf(d.cgst)||(Math.round(ex*9/118)), sg=pf(d.sgst)||(Math.round(ex*9/118)), ba=pf(d.basic)||(ex-cg-sg);
+      return `${hdr}<div style="font-size:16pt;font-weight:900;text-align:center;text-decoration:underline;margin:6px 0 6px;letter-spacing:3px;">INVOICE</div><div style="border:2.5px solid #000;"><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:700;border-right:1.5px solid #000;">NAME :- <b>${d.name}</b></div><div style="flex:0 0 44%;padding:5px 9px;font-size:10.5pt;font-weight:900;text-align:right;">INVOICE NO : &nbsp;${d.invno}</div></div><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:1;padding:5px 9px;font-size:10.5pt;font-weight:700;border-right:1.5px solid #000;">ADD:- ${d.address}</div><div style="flex:0 0 44%;padding:5px 9px;font-size:10.5pt;font-weight:700;">DATE :- &nbsp;${fd(d.date)}</div></div><div style="display:flex;border-bottom:1.5px solid #000;"><div style="flex:1;padding:5px 9px;border-right:1.5px solid #000;"></div><div style="flex:0 0 44%;padding:5px 9px;font-size:9.5pt;font-weight:700;">HP :- ${d.hp}</div></div><div style="border-bottom:1.5px solid #000;padding:5px 9px;font-size:10.5pt;font-weight:900;">MODEL :- ${d.model}</div><div style="border-bottom:1.5px solid #000;padding:5px 9px;font-size:10.5pt;font-weight:700;">ENG NO :- ${d.engno}</div><div style="border-bottom:1.5px solid #000;padding:5px 9px;font-size:10.5pt;font-weight:700;">CHASSIS NO :- ${d.chassis}</div><div style="display:flex;border-bottom:1.5px solid #000;background:#f5f5f5;"><div style="flex:0.68;padding:5px 9px;font-weight:900;border-right:1.5px solid #000;"></div><div style="flex:0.32;padding:5px 9px;font-size:10.5pt;font-weight:900;text-align:center;">AMOUNT</div></div>${PR('BASIC',ba?fmt(ba):'')}${PR('CGST 9%',cg?fmt(cg):'')}${PR('SGST 9%',sg?fmt(sg):'')}<div style="border-bottom:1.5px solid #000;padding:3px 9px;font-size:4pt;">&nbsp;</div>${PR('EX SHOWROOM',ex?fmt(ex):'',true)}<div style="padding:5px 9px;font-size:9pt;font-weight:700;">GST NO :- ${org.gst}</div></div>${footer}`;
+    }
+
+    function buildFname(type, d, s) {
+      const pm = { quotation:'quo', receipt:'rec', invoice:'inv' };
+      const nt = (d.name||'cust').trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+      return `${pm[type]||type.slice(0,3)}-${nt}-${s?'stamped':'plain'}.pdf`;
+    }
+
+    // ── PDF options ──
+    const PDFOPTS = {
+      margin: 0,
+      image: { type:'jpeg', quality:0.98 },
+      html2canvas: { scale:2, useCORS:true, allowTaint:true, logging:false },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+    };
+
+    // ── GENERATE SINGLE ──
+    async function genSingle(type, ws) {
+      const org = currentOrg.value;
+      if (!org) { toast('Please select an organisation!', 'error'); return; }
+      const d = gd();
+      if (!d.name) { toast('Customer name is required!', 'error'); return; }
+
+      if (d.invno) {
+        const used = getOrgNos().find(u => u.no === d.invno);
+        const self = curCustId.value ? (customers.value.find(c => c.id === curCustId.value) || {}).invno : null;
+        if (used && self !== d.invno) {
+          if (!confirm(`Doc #${d.invno} already used for "${used.customerName}". Continue?`)) return;
+        }
+      }
+
+      const { stamp, footer, hdr } = buildParts(org, ws);
+      spin(`Generating ${type}…`);
+      // Create a temp div appended directly to body (bypasses overflow:hidden)
+      const ct = document.createElement('div');
+      ct.style.cssText = 'position:absolute;left:-9999px;top:0;width:210mm;';
+      document.body.appendChild(ct);
+      try {
+        let inner = '';
+        if (type === 'quotation') inner = tplQ(d, org, hdr, footer);
+        else if (type === 'receipt') inner = tplR(d, org, hdr, stamp);
+        else inner = tplI(d, org, hdr, footer);
+
+        ct.innerHTML = `<div style="width:210mm;padding:12mm 13mm;font-family:Arial,sans-serif;font-size:10.5pt;color:#000;background:#fff;">${inner}</div>`;
+
+        await html2pdf().set({ ...PDFOPTS, filename: buildFname(type, d, ws) }).from(ct.firstChild).save();
+        document.body.removeChild(ct);
+        unspin();
+        saveCust(false);
+        toast(`${type.toUpperCase()} downloaded ✓`);
+      } catch (e) {
+        if (document.body.contains(ct)) document.body.removeChild(ct);
+        unspin();
+        toast('PDF error — try again', 'error'); console.error(e);
+      }
+    }
+
+    // ── GENERATE ALL PLAIN — page1: receipt+quotation, page2: invoice ──
+    // Renders each page separately into canvas, then combines into one PDF
+    async function genAllPlain() {
+      const org = currentOrg.value;
+      if (!org) { toast('Please select an organisation!', 'error'); return; }
+      const d = gd();
+      if (!d.name) { toast('Customer name is required!', 'error'); return; }
+
+      const nt = (d.name||'cust').trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+      const { footer: ft2, hdr: hdr2 } = buildParts(org, false);
+
+      const ex=pf(d.exshowroom), rto=pf(d.rto), ins=pf(d.insurance), hp=pf(d.hpcharge)||500, acc=pf(d.accessories)||2000;
+      const tot=pf(d.onroad)||(ex+rto+ins+hp+acc);
+      const totW = tot ? n2w(tot).toUpperCase() + ' ONLY' : '';
+      const cash = pf(d.cash) || 0;
+
+      // ── helper: render an HTML string into a canvas image ──
+      async function renderPage(htmlContent) {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;left:-9999px;top:0;width:210mm;background:#fff;';
+        el.innerHTML = htmlContent;
+        document.body.appendChild(el);
+        try {
+          const canvas = await html2pdf().set({
+            image:{type:'jpeg',quality:0.98},
+            html2canvas:{scale:2,useCORS:true,allowTaint:true,logging:false},
+            jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+          }).from(el.firstChild).outputImg();
+          return canvas;
+        } finally {
+          document.body.removeChild(el);
+        }
+      }
+
+      const smHdr = `<div style="text-align:center;margin-bottom:3px;"><div style="font-size:14pt;font-weight:900;letter-spacing:1px;">${org.name}</div><div style="font-size:6pt;font-weight:700;">${org.addr}</div></div>`;
+
+      const recHTML = `${smHdr}
+<div style="font-size:13pt;font-weight:900;text-align:center;text-decoration:underline;letter-spacing:2px;margin:4px 0;">RECEIPT</div>
+<div style="border:2px solid #000;font-size:8.5pt;">
+<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:0 0 38%;padding:3px 7px;font-weight:900;border-right:1px solid #000;">RECEIPT NO :-</div><div style="flex:1;padding:3px 7px;font-weight:900;">${d.invno}</div></div>
+<div style="border-bottom:1px solid #000;padding:3px 7px;font-weight:900;">NAME :- ${d.name}</div>
+<div style="border-bottom:1px solid #000;padding:3px 7px;">DATE :- ${fd(d.date)}</div>
+<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:0 0 28%;padding:3px 7px;font-weight:900;border-right:1px solid #000;">HP TO</div><div style="flex:0 0 4%;padding:3px 4px;border-right:1px solid #000;">:-</div><div style="flex:1;padding:3px 7px;">${d.hp}</div></div>
+<div style="border-bottom:1px solid #000;padding:3px 7px;font-weight:900;">MODEL :- ${d.model}</div>
+<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:0 0 38%;padding:3px 7px;font-weight:900;border-right:1px solid #000;">CASH RECIVED :-</div><div style="flex:1;padding:3px 7px;">${cash?fmt(cash)+' /-  ( CASH )':''}</div></div>
+<div style="display:flex;"><div style="flex:0.55;padding:3px 7px;border-right:1px solid #000;font-size:8pt;">AMOUNT IN WORDS :- <b>${d.words?d.words+' /-':''}</b></div><div style="flex:0.45;padding:3px 7px;text-align:center;font-weight:900;font-size:8pt;">FOR ${org.name}</div></div>
+</div>`;
+
+      const quotHTML = `<div style="border-top:2px dashed #999;margin:8px 0 5px;"></div>
+${smHdr}
+<div style="font-size:13pt;font-weight:900;text-align:center;text-decoration:underline;letter-spacing:2px;margin:4px 0;">QUOTATION</div>
+<div style="border:2px solid #000;font-size:8.5pt;">
+<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:1;padding:3px 7px;border-right:1px solid #000;">NAME :- <b>${d.name}</b></div><div style="flex:0 0 42%;padding:3px 7px;font-weight:900;text-align:right;">QUOTATION NO &nbsp;${d.invno}</div></div>
+<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:1;padding:3px 7px;border-right:1px solid #000;font-size:7.5pt;">ADD:- ${d.address}</div><div style="flex:0 0 42%;padding:3px 7px;">DATE :- &nbsp;${fd(d.date)}</div></div>
+<div style="display:flex;border-bottom:1px solid #000;"><div style="flex:1;padding:3px 7px;border-right:1px solid #000;"></div><div style="flex:0 0 42%;padding:3px 7px;font-size:7.5pt;">HP:- ${d.hp}</div></div>
+<div style="display:flex;border-bottom:1px solid #000;background:#f5f5f5;"><div style="flex:0.68;padding:3px 7px;font-weight:900;border-right:1px solid #000;">MODEL :- ${d.model}</div><div style="flex:0.32;padding:3px 7px;font-weight:900;text-align:right;">Amount</div></div>
+${PR2('EX SHOWROOM',ex?'&#8377;'+fmt(ex):'')}
+${PR2('RTO',rto?'&#8377;'+fmt(rto):'')}
+${PR2('INSURANCE',ins?'&#8377;'+fmt(ins):'')}
+${PR2('HP',hp?'&#8377;'+fmt(hp):'')}
+${PR2('ACCESSORIES',acc?'&#8377;'+fmt(acc):'')}
+<div style="display:flex;border-bottom:1px solid #000;background:#fafafa;"><div style="flex:0.68;padding:3px 7px;font-weight:900;border-right:1px solid #000;font-size:8pt;">ON ROAD:- ${totW}</div><div style="flex:0.32;padding:3px 7px;font-weight:900;text-align:right;">${tot?fmt(tot):''}</div></div>
+<div style="padding:3px 7px;border-bottom:1px solid #000;font-size:7pt;">GST NO :- ${org.gst}</div>
+<div style="padding:3px 7px;font-size:7pt;">NEFT DETAIL :- ${org.bank} &nbsp; A/C NO:- ${org.neft}</div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:5px;">
+<div style="flex:1;font-size:5.5pt;line-height:1.5;color:#444;padding-right:8px;">I/We hereby certify that my/our registration certificate under the Maharashtra Value Added Tax Act,2002 is in force on the date on which the sale of the goods specified in this Tax Invoice is made by me/us.</div>
+<div style="text-align:center;min-width:70px;font-size:7pt;font-weight:900;">${org.name}</div>
+</div>`;
+
+      // page1: auto-height (no min-height) so canvas crops to content
+      // page2: full A4 min-height for invoice
+      const page1Html = `<div style="width:210mm;min-height:297mm;padding:8mm 13mm;font-family:Arial,sans-serif;color:#000;background:#fff;box-sizing:border-box;">${recHTML}${quotHTML}</div>`;
+      const page2Html = `<div style="width:210mm;min-height:297mm;padding:12mm 13mm;font-family:Arial,sans-serif;color:#000;background:#fff;box-sizing:border-box;">${tplI(d, org, hdr2, ft2)}</div>`;
+
+      spin('Building 2-page PDF…');
+
+      // Create two separate off-screen containers appended to body
+      function mkContainer(html) {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;left:-9999px;top:0;width:210mm;background:#fff;';
+        el.innerHTML = html;
+        document.body.appendChild(el);
+        return el;
+      }
+
+      const c1 = mkContainer(page1Html);
+      const c2 = mkContainer(page2Html);
+
+      const H2COPTS = { scale:2, useCORS:true, allowTaint:true, logging:false, backgroundColor:'#ffffff' };
+
+      try {
+        // Render page 1 to canvas
+        const canvas1 = await html2canvas(c1.firstChild, H2COPTS);
+        const canvas2 = await html2canvas(c2.firstChild, H2COPTS);
+
+        document.body.removeChild(c1);
+        document.body.removeChild(c2);
+
+        // Build PDF manually using jsPDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+
+        const W = 210, H = 297;
+        // For each canvas: always fill the full A4 page (stretch to 210×297mm)
+        const addCanvasToPdf = (pdf, canvas, isFirst) => {
+          if (!isFirst) pdf.addPage();
+          const imgData = canvas.toDataURL('image/jpeg', 0.97);
+          // Always fill complete A4 page — no white gap at bottom
+          pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+        };
+
+        addCanvasToPdf(pdf, canvas1, true);
+        addCanvasToPdf(pdf, canvas2, false);
+        pdf.save(`all-${nt}-plain.pdf`);
+
+        unspin();
+        saveCust(false);
+        toast('All 3 docs downloaded ✓ (2 pages)');
+      } catch (e) {
+        if (document.body.contains(c1)) document.body.removeChild(c1);
+        if (document.body.contains(c2)) document.body.removeChild(c2);
+        unspin();
+        toast('PDF error — try again', 'error'); console.error(e);
+      }
+    }
+
+    // ══ OSV OFFICER ══
+    // ── SIGNATURE PAD ──
+    function initSigPad(canvasId, stateKey) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      // Retina fix
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalCompositeOperation = 'source-over';
+      let drawing = false, lx = 0, ly = 0;
+
+      function pos(e) {
+        const r = canvas.getBoundingClientRect();
+        const src = e.touches ? e.touches[0] : e;
+        return { x: src.clientX - r.left, y: src.clientY - r.top };
+      }
+      function start(e) { e.preventDefault(); drawing = true; const p = pos(e); lx=p.x; ly=p.y; }
+      function move(e) {
+        if (!drawing) return; e.preventDefault();
+        const p = pos(e);
+        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
+        lx=p.x; ly=p.y;
+      }
+      function end(e) {
+        e.preventDefault(); drawing = false;
+        // Save to state
+        docsState[stateKey] = canvas.toDataURL('image/png');
+      }
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', move);
+      canvas.addEventListener('mouseup', end);
+      canvas.addEventListener('touchstart', start, { passive:false });
+      canvas.addEventListener('touchmove', move, { passive:false });
+      canvas.addEventListener('touchend', end, { passive:false });
+    }
+
+    function clearSig(canvasId, stateKey) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      docsState[stateKey] = '';
+    }
+
+    // ── FULLSCREEN SIG PAD ──
+    async function openSigFullscreen() {
+      sigFsOpen.value = true;
+      await nextTick();
+      if (!fsSigPadInited) {
+        const canvas = document.getElementById('sig-cust-fs');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        // Fit to window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 110;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'source-over';
+        let drawing = false, lx = 0, ly = 0;
+        function pos(e) {
+          const r = canvas.getBoundingClientRect();
+          const src = e.touches ? e.touches[0] : e;
+          return { x: src.clientX - r.left, y: src.clientY - r.top };
+        }
+        function start(e) { e.preventDefault(); drawing=true; const p=pos(e); lx=p.x; ly=p.y; }
+        function move(e) {
+          if (!drawing) return; e.preventDefault();
+          const p=pos(e);
+          ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
+          lx=p.x; ly=p.y;
+        }
+        function end(e) { e.preventDefault(); drawing=false; }
+        canvas.addEventListener('mousedown',start);
+        canvas.addEventListener('mousemove',move);
+        canvas.addEventListener('mouseup',end);
+        canvas.addEventListener('touchstart',start,{passive:false});
+        canvas.addEventListener('touchmove',move,{passive:false});
+        canvas.addEventListener('touchend',end,{passive:false});
+        fsSigPadInited = true;
+      }
+    }
+    function clearFsSig() {
+      const canvas = document.getElementById('sig-cust-fs');
+      if (!canvas) return;
+      canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+    }
+    function saveFsSig() {
+      const canvas = document.getElementById('sig-cust-fs');
+      if (!canvas) return;
+      docsState.custSign = canvas.toDataURL('image/png');
+      // Also copy to the small sig pad (clear it and draw the data)
+      const small = document.getElementById('sig-cust');
+      if (small) {
+        const ctx2 = small.getContext('2d');
+        ctx2.clearRect(0,0,small.width,small.height);
+        const img = new Image();
+        img.onload = () => ctx2.drawImage(img, 0, 0, small.width/window.devicePixelRatio, small.height/window.devicePixelRatio);
+        img.src = docsState.custSign;
+      }
+      sigFsOpen.value = false;
+      toast('Signature saved ✓');
+    }
+
+    // ── GENERATE RELATED PARTY PDF (overlay on real PDF) ──
+    async function genRelatedPartyPdf() {
+      if (!docsState.custSign) { toast('Customer signature required', 'error'); return; }
+      spin('Generating Related Party PDF…');
+      try {
+        const { PDFDocument } = PDFLib;
+        // Load the embedded original PDF
+        const rpBytes = Uint8Array.from(atob(RP_PDF_B64), c => c.charCodeAt(0));
+        const pdfDoc = await PDFDocument.load(rpBytes);
+        const pages = pdfDoc.getPages();
+        const page0 = pages[0]; // Signature is on page 1
+        const { width, height } = page0.getSize(); // 595 x 842 pts
+
+        // Embed customer signature PNG
+        const sigDataUrl = docsState.custSign;
+        const sigBase64 = sigDataUrl.split(',')[1];
+        const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
+        const sigImg = await pdfDoc.embedPng(sigBytes);
+
+        // Signature position on Related Party form page 1
+        // Borrower line is approx at y=520 from bottom (measured from original)
+        const sigW = 90, sigH = 32;
+        const sigX = 128; // after "Borrower :"
+        const sigY = 512; // pts from bottom of page
+        page0.drawImage(sigImg, { x: sigX, y: sigY, width: sigW, height: sigH });
+
+        // Save and download
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `related-party-${(f.name||'customer').replace(/\s+/g,'_').slice(0,10)}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        unspin(); toast('Related Party PDF downloaded ✓');
+      } catch(e) {
+        unspin(); toast('PDF error — try again', 'error'); console.error(e);
+      }
+    }
+
+    // ── GENERATE T&C PDF (overlay on real PDF) ──
+    async function genTcPdf() {
+      if (!docsState.custSign) { toast('Customer signature required', 'error'); return; }
+      spin('Generating T&C PDF…');
+      try {
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
+        const tcBytes = Uint8Array.from(atob(TC_PDF_B64), c => c.charCodeAt(0));
+        const pdfDoc = await PDFDocument.load(tcBytes);
+        const pages = pdfDoc.getPages();
+        const page0 = pages[0];
+        const lastPage = pages[pages.length - 1];
+
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        const cn = f.name || docsState.tcCustName || '';
+        const leadId = docsState.tcLeadId || f.invno || '';
+        const dateStr = fd(docsState.tcDate) || fd(today());
+        const place = docsState.tcPlace || 'MUMBAI';
+
+        // PAGE 1 — top fields
+        // "याहकाचे नाव" line: blank after label, approx x=155,y=781
+        page0.drawText(cn,     { x:100, y:728, size:9, font:fontBold, color:rgb(0,0,0) });
+        // "अर्ज केल्याचा दिनांक" — right side approx x=435,y=781
+        page0.drawText(dateStr,{ x:430, y:728, size:9, font, color:rgb(0,0,0) });
+        // "लीड आयडी" — approx x=85,y=764
+        page0.drawText(leadId, { x:90,  y:700, size:9, font, color:rgb(0,0,0) });
+
+        // PAGE 3 — signature section at the bottom
+        const sigDataUrl = docsState.custSign;
+        const sigBase64 = sigDataUrl.split(',')[1];
+        const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
+        const sigImg = await pdfDoc.embedPng(sigBytes);
+
+        // "अर्जदाराची स्वाक्षरी" line — x~57, y~72 from bottom
+        lastPage.drawImage(sigImg, { x:130, y:90, width:100, height:36 });
+        // Applicant name printed above the label line (अर्जदाराचे नाव)
+        lastPage.drawText(cn,     { x:130,  y:35, size:9, font:fontBold, color:rgb(0,0,0) });
+        // Date — right area x~430,y~107
+        lastPage.drawText(dateStr,{ x:600, y:85, size:9, font, color:rgb(0,0,0) });
+        // Place — x~432,y~83
+        lastPage.drawText(place,  { x:600, y:30,  size:9, font, color:rgb(0,0,0) });
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type:'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tc-' + (f.name||'customer').replace(/\s+/g,'_').slice(0,10) + '.pdf';
+        a.click();
+        URL.revokeObjectURL(url);
+        unspin(); toast('T&C PDF downloaded ✓');
+      } catch(e) {
+        unspin(); toast('PDF error — try again', 'error'); console.error(e);
+      }
+    }
+
+    // ── INIT ──
+    initFb();
+    const { watch, nextTick } = Vue;
+    // When docs tab is opened, init all sig pads
+    watch(tab, async (newTab) => {
+      if (newTab === 'docs') {
+        await nextTick();
+        initSigPad('sig-cust', 'custSign');
+        // RP uses shared custSign
+        // TC uses shared custSign
+        // Auto-fill names from customer form
+        docsState.tcCustName = f.name || docsState.tcCustName;
+        if (!docsState.tcLeadId) docsState.tcLeadId = f.invno || '';
+      }
+    });
+    // Load officer details after auth
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.ac-wrap')) {
+        acDocno.value = false; acHp.value = false; acModel.value = false;
+        acIdv.value = false;
+      }
+    });
+
+    return {
+      orgs, customers, curCustId, editOrgId, tab, tabs, sideOpen,
+      f, qApprox, qv,
+      orgModal, om,
+      docsState, sigFsOpen,
+      tMsg, tShow, tType, spinning, spinMsg,
+      fbSyncing, fbMsg, fbMsgCls,
+      acDocno, acHp, acModel, acIdv,
+      dnoSug, dnoStatus, hpSug, modelSug, idvSug,
+      uModels, currentOrg, rtoPct, idvPct, mData,
+      onroadSuggestions,
+      authUser, authChecked, authError,
+      confirmDeleteId, confirmDeleteName,
+      // methods
+      newCustomer, clearForm, loadCustomer, deleteCust, saveCust, touchDate,
+      onOrgChange, openOrgModal, editOrg, deleteOrg, prevStamp, saveOrg,
+      onHpInput, onHpFocus,
+      onModelInput, onModelFocus, selectModel,
+      onIdvChange, onIdvFocus,
+      applySuggestion,
+      calc, autoCash,
+      quotCalc, quotRandom, applyQuot,
+      genSingle, genAllPlain, manualSync,
+      signInGoogle, signOut,
+      confirmDeleteCust, doDeleteCust,
+      // docs
+      openSigFullscreen, clearFsSig, saveFsSig,
+      clearSig, genRelatedPartyPdf, genTcPdf,
+      fmt, fd, setTimeout,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
