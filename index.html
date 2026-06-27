@@ -1834,7 +1834,7 @@ ${PR2('ACCESSORIES',acc?'&#8377;'+fmt(acc):'')}
         // Fit to window
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight - 110;
-        ctx.strokeStyle = '#000';
+        ctx.strokeStyle = '#00f';
         ctx.lineWidth = 3.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1947,11 +1947,11 @@ ${PR2('ACCESSORIES',acc?'&#8377;'+fmt(acc):'')}
 
         // PAGE 1 — top fields
         // "याहकाचे नाव" line: blank after label, approx x=155,y=781
-        page0.drawText(cn,     { x:100, y:728, size:9, font:fontBold, color:rgb(0,0,0) });
+        page0.drawText(cn,     { x:100, y:728, size:9, font:fontBold, color:rgb(0,44,155) });
         // "अर्ज केल्याचा दिनांक" — right side approx x=435,y=781
-        page0.drawText(dateStr,{ x:430, y:728, size:9, font, color:rgb(0,0,0) });
+        page0.drawText(dateStr,{ x:430, y:728, size:9, font, color:rgb(0,44,155) });
         // "लीड आयडी" — approx x=85,y=764
-        page0.drawText(leadId, { x:90,  y:700, size:9, font, color:rgb(0,0,0) });
+        page0.drawText(leadId, { x:90,  y:700, size:9, font, color:rgb(0,44,155) });
 
         // PAGE 3 — signature section at the bottom
         const sigDataUrl = docsState.custSign;
@@ -1962,11 +1962,11 @@ ${PR2('ACCESSORIES',acc?'&#8377;'+fmt(acc):'')}
         // "अर्जदाराची स्वाक्षरी" line — x~57, y~72 from bottom
         lastPage.drawImage(sigImg, { x:130, y:90, width:100, height:36 });
         // Applicant name printed above the label line (अर्जदाराचे नाव)
-        lastPage.drawText(cn,     { x:130,  y:35, size:9, font:fontBold, color:rgb(0,0,0) });
+        lastPage.drawText(cn,     { x:130,  y:35, size:9, font:fontBold, color:rgb(0,44,155) });
         // Date — right area x~430,y~107
-        lastPage.drawText(dateStr,{ x:600, y:85, size:9, font, color:rgb(0,0,0) });
+        lastPage.drawText(dateStr,{ x:600, y:85, size:9, font, color:rgb(0,44,155) });
         // Place — x~432,y~83
-        lastPage.drawText(place,  { x:600, y:30,  size:9, font, color:rgb(0,0,0) });
+        lastPage.drawText(place,  { x:600, y:30,  size:9, font, color:rgb(0,44,155) });
 
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type:'application/pdf' });
