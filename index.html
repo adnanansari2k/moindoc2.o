@@ -1530,7 +1530,7 @@ createApp({
       const o = pf(f.onroad), r = pf(f.rto), ins = pf(f.insurance), hp = pf(f.hpcharge), acc = pf(f.accessories);
       const ex = Math.max(0, Math.round(o - r - ins - hp - acc));
       f.exshowroom = ex || '';
-      if (ex) { const cg = Math.round(ex * 9 / 118), sg = Math.round(ex * 9 / 118); f.cgst = cg; f.sgst = sg; f.basic = ex - cg - sg; }
+      if (ex) { const cg = Math.round(ex *0.09), sg = Math.round(ex * 0.09); f.cgst = cg; f.sgst = sg; f.basic = ex - cg - sg; }
       else { f.cgst = ''; f.sgst = ''; f.basic = ''; }
     }
 
