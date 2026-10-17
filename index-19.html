@@ -1000,6 +1000,16 @@ createApp({
     const acIdv = ref(false);
     const confirmDeleteId = ref(null), confirmDeleteName = ref('');
     const sideSearch = ref('');
+     const filteredCustomers = computed(() => {
+  const q = sideSearch.value.toLowerCase().trim();
+  if (!q) return customers.value;
+  return customers.value.filter(c => 
+    (c.name && c.name.toLowerCase().includes(q)) ||
+    (c.model && c.model.toLowerCase().includes(q)) ||
+    (c.invno && c.invno.toLowerCase().includes(q))
+  );
+});
+     
 
     // Firebase
     const fbSyncing = ref(false), fbMsg = ref(''), fbMsgCls = ref('');
