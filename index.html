@@ -943,6 +943,8 @@ createApp({
         }
       } catch (e) {
         authError.value = e.message || 'Sign-in failed';
+        console.error("Google login failed:", error.code, error.message);
+        prompt(console.error("Google login failed:", error.code, error.message);)
       }
     }
 
